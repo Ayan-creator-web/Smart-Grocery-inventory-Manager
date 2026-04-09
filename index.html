@@ -1,0 +1,2582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GrocerIQ — Smart Grocery & Inventory Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+:root {
+  --bg: #f7f5f0;
+  --surface: #ffffff;
+  --surface2: #f0ede6;
+  --border: #e2ddd6;
+  --text: #1a1714;
+  --text2: #6b6560;
+  --accent: #2d6a4f;
+  --accent-light: #d8f3dc;
+  --accent-mid: #52b788;
+  --warn: #e07a1f;
+  --warn-light: #fff3e0;
+  --danger: #c1121f;
+  --danger-light: #ffebee;
+  --info: #1d6fa4;
+  --info-light: #e3f2fd;
+  --yellow: #f4b942;
+  --yellow-light: #fffde7;
+  --shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,.12);
+  --r: 14px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ── Layout ───────────────────────────────────────────── */
+.app { display: flex; height: 100vh; overflow: hidden; }
+
+.sidebar {
+  width: 240px; flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  padding: 20px 0;
+  overflow-y: auto;
+}
+
+.sidebar-logo {
+  padding: 0 20px 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.sidebar-logo h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px;
+  color: var(--accent);
+  line-height: 1;
+}
+.sidebar-logo span { font-size: 11px; color: var(--text2); letter-spacing: .04em; }
+
+.nav-group { padding: 0 10px; margin-bottom: 8px; }
+.nav-label { font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text2); padding: 4px 10px 6px; }
+
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border-radius: 10px;
+  cursor: pointer; transition: all .15s;
+  font-size: 13.5px; font-weight: 500; color: var(--text2);
+  border: none; background: none; width: 100%; text-align: left;
+}
+.nav-item:hover { background: var(--surface2); color: var(--text); }
+.nav-item.active { background: var(--accent-light); color: var(--accent); }
+.nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+.badge {
+  margin-left: auto;
+  background: var(--danger); color: #fff;
+  border-radius: 20px; font-size: 10px; font-weight: 700;
+  padding: 1px 6px; min-width: 18px; text-align: center;
+}
+.badge.green { background: var(--accent); }
+
+.main { flex: 1; overflow-y: auto; background: var(--bg); }
+
+/* ── Header ───────────────────────────────────────────── */
+.page-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 20px 28px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 10;
+}
+.page-title { font-family: 'DM Serif Display', serif; font-size: 26px; line-height: 1; }
+.page-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+.header-actions { display: flex; gap: 8px; align-items: center; }
+
+/* ── Buttons ──────────────────────────────────────────── */
+.btn {
+  padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500;
+  cursor: pointer; border: none; transition: all .15s; font-family: inherit;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #1e5437; }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text2); }
+.btn-outline:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+.btn-sm { padding: 5px 11px; font-size: 12px; }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-warn { background: var(--warn); color: #fff; }
+.btn-icon { padding: 7px; border-radius: 8px; border: 1px solid var(--border); background: #fff; cursor: pointer; display: inline-flex; color: var(--text2); transition: all .15s; }
+.btn-icon:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── Cards ────────────────────────────────────────────── */
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 20px; box-shadow: var(--shadow);
+}
+
+/* ── Page Content ─────────────────────────────────────── */
+.page { display: none; padding: 24px 28px; animation: fadeIn .2s ease; }
+.page.active { display: block; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+
+/* ── KPI Grid ─────────────────────────────────────────── */
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+.kpi {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 18px 20px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.kpi-label { font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--text2); }
+.kpi-val { font-family: 'DM Serif Display', serif; font-size: 32px; line-height: 1; }
+.kpi-sub { font-size: 11.5px; color: var(--text2); }
+.kpi.warn { border-left: 3px solid var(--warn); }
+.kpi.danger { border-left: 3px solid var(--danger); }
+.kpi.ok { border-left: 3px solid var(--accent-mid); }
+.kpi.info { border-left: 3px solid var(--info); }
+
+/* ── Section Header ───────────────────────────────────── */
+.section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.section-head h2 { font-size: 16px; font-weight: 600; }
+
+/* ── Inventory Table ──────────────────────────────────── */
+.inv-table { width: 100%; border-collapse: collapse; }
+.inv-table th {
+  font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
+  color: var(--text2); padding: 10px 12px; border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+.inv-table td { padding: 12px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.inv-table tr:last-child td { border-bottom: none; }
+.inv-table tr:hover td { background: var(--surface2); }
+
+/* ── Pill / Tag ───────────────────────────────────────── */
+.pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 500;
+}
+.pill-ok { background: var(--accent-light); color: var(--accent); }
+.pill-warn { background: var(--warn-light); color: var(--warn); }
+.pill-danger { background: var(--danger-light); color: var(--danger); }
+.pill-info { background: var(--info-light); color: var(--info); }
+.pill-gray { background: var(--surface2); color: var(--text2); }
+.pill-yellow { background: var(--yellow-light); color: #a07000; }
+
+/* ── Progress Bar ─────────────────────────────────────── */
+.stock-bar {
+  height: 5px; border-radius: 3px; background: var(--surface2);
+  overflow: hidden; width: 80px; flex-shrink: 0;
+}
+.stock-fill { height: 100%; border-radius: 3px; transition: width .3s; }
+
+/* ── Grocery List ─────────────────────────────────────── */
+.list-group { margin-bottom: 18px; }
+.list-group-title {
+  font-size: 11px; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--text2);
+  padding: 8px 0 6px;
+  display: flex; align-items: center; gap-6px;
+}
+.list-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 14px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--surface);
+  margin-bottom: 6px; transition: all .15s;
+}
+.list-item:hover { border-color: var(--accent-mid); }
+.list-item.checked { opacity: .55; }
+.list-item.checked .li-name { text-decoration: line-through; }
+.li-check {
+  width: 18px; height: 18px; border-radius: 5px;
+  border: 2px solid var(--border); cursor: pointer;
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.li-check.done { background: var(--accent); border-color: var(--accent); }
+.li-name { font-weight: 500; font-size: 13.5px; flex: 1; }
+.li-meta { font-size: 11px; color: var(--text2); }
+
+/* ── Pantry Cards ─────────────────────────────────────── */
+.pantry-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.pantry-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 16px; transition: all .2s; cursor: default;
+}
+.pantry-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-1px); }
+.pc-name { font-weight: 600; font-size: 14.5px; margin-bottom: 4px; }
+.pc-qty { font-size: 13px; color: var(--text2); margin-bottom: 10px; }
+.pc-expiry { font-size: 12px; display: flex; align-items: center; gap: 5px; }
+
+/* ── Recipes ──────────────────────────────────────────── */
+.recipe-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.recipe-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); overflow: hidden; transition: all .2s;
+}
+.recipe-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-1px); }
+.recipe-banner {
+  height: 6px;
+}
+.recipe-body { padding: 16px; }
+.recipe-title { font-family: 'DM Serif Display', serif; font-size: 18px; margin-bottom: 8px; }
+.recipe-ings { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px; }
+.recipe-add-btn { width: 100%; }
+
+/* ── Dashboard Charts (CSS only) ──────────────────────── */
+.chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+.bar-chart { display: flex; flex-direction: column; gap: 8px; }
+.bc-row { display: flex; align-items: center; gap: 10px; font-size: 12px; }
+.bc-label { width: 90px; color: var(--text2); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bc-bar-wrap { flex: 1; height: 10px; background: var(--surface2); border-radius: 5px; overflow: hidden; }
+.bc-bar { height: 100%; border-radius: 5px; transition: width .5s ease; }
+.bc-val { width: 32px; text-align: right; font-size: 11px; color: var(--text2); }
+
+.category-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.cat-pill {
+  padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 500;
+  display: flex; align-items: center; gap: 6px;
+}
+
+/* ── Alerts ───────────────────────────────────────────── */
+.alert {
+  border-radius: 10px; padding: 12px 16px; margin-bottom: 10px;
+  display: flex; align-items: flex-start; gap: 10px; font-size: 13px;
+}
+.alert-danger { background: var(--danger-light); border-left: 3px solid var(--danger); }
+.alert-warn { background: var(--warn-light); border-left: 3px solid var(--warn); }
+.alert-ok { background: var(--accent-light); border-left: 3px solid var(--accent); }
+.alert-info { background: var(--info-light); border-left: 3px solid var(--info); }
+.alert-icon { font-size: 16px; }
+.alert-text strong { display: block; margin-bottom: 1px; }
+
+/* ── Modal ────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.45);
+  display: none; align-items: center; justify-content: center; z-index: 100;
+  backdrop-filter: blur(2px);
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--surface); border-radius: 18px;
+  padding: 28px; width: 420px; max-width: 95vw;
+  box-shadow: var(--shadow-lg); animation: scaleIn .2s ease;
+}
+@keyframes scaleIn { from { transform: scale(.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.modal-title { font-family: 'DM Serif Display', serif; font-size: 22px; margin-bottom: 18px; }
+
+/* ── Form ─────────────────────────────────────────────── */
+.form-group { margin-bottom: 14px; }
+.form-label { display: block; font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 5px; letter-spacing: .03em; }
+.form-input, .form-select {
+  width: 100%; padding: 9px 12px; border-radius: 8px;
+  border: 1px solid var(--border); font-family: inherit; font-size: 13.5px;
+  background: var(--bg); color: var(--text); outline: none; transition: border .15s;
+}
+.form-input:focus, .form-select:focus { border-color: var(--accent); background: #fff; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+
+/* ── Search ───────────────────────────────────────────── */
+.search-wrap { position: relative; }
+.search-wrap svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--text2); }
+.search-input { padding-left: 32px !important; }
+
+/* ── Avatar ───────────────────────────────────────────── */
+.avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+
+/* ── Household ────────────────────────────────────────── */
+.member-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.member-row:last-child { border-bottom: none; }
+
+/* ── Tabs ─────────────────────────────────────────────── */
+.tabs { display: flex; gap: 4px; margin-bottom: 18px; background: var(--surface2); border-radius: 10px; padding: 3px; width: fit-content; }
+.tab-btn {
+  padding: 7px 16px; border-radius: 8px; font-size: 13px; font-weight: 500;
+  cursor: pointer; border: none; background: none; color: var(--text2); transition: all .15s;
+}
+.tab-btn.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+
+/* ── Toast ────────────────────────────────────────────── */
+.toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 200; display: flex; flex-direction: column; gap: 8px; }
+.toast {
+  background: var(--text); color: #fff; padding: 11px 18px;
+  border-radius: 10px; font-size: 13px; font-weight: 500;
+  animation: toastIn .25s ease; box-shadow: var(--shadow-lg);
+  display: flex; align-items: center; gap: 8px;
+}
+.toast.success { background: var(--accent); }
+.toast.warn { background: var(--warn); }
+.toast.error { background: var(--danger); }
+@keyframes toastIn { from { transform: translateX(20px); opacity:0; } to { transform: translateX(0); opacity:1; } }
+
+/* ── Scrollbar ────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ── Empty State ──────────────────────────────────────── */
+.empty { text-align: center; padding: 40px 20px; color: var(--text2); }
+.empty-icon { font-size: 40px; margin-bottom: 10px; }
+.empty p { font-size: 13px; }
+
+/* ── Responsive ───────────────────────────────────────── */
+@media (max-width: 900px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .pantry-grid { grid-template-columns: repeat(2, 1fr); }
+  .chart-row { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .sidebar { width: 60px; }
+  .sidebar-logo h1, .sidebar-logo span, .nav-item span { display: none; }
+  .nav-item { justify-content: center; padding: 10px; }
+  .main { }
+  .pantry-grid { grid-template-columns: 1fr; }
+  .recipe-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Price Chart ──────────────────────────────────────── */
+.price-chart { display: flex; align-items: flex-end; gap: 6px; height: 60px; margin-top: 8px; }
+.price-bar-wrap { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1; }
+.price-bar-col { width: 100%; border-radius: 3px 3px 0 0; transition: height .4s; }
+.price-bar-lbl { font-size: 9px; color: var(--text2); }
+
+/* ── Messages ─────────────────────────────────────────── */
+.msg-item {
+  padding: 13px 16px; border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background .15s; display: flex; gap: 10px; align-items: flex-start;
+}
+.msg-item:hover { background: var(--surface2); }
+.msg-item.active { background: var(--accent-light); border-left: 3px solid var(--accent); }
+.msg-item.unread { background: #f8fff9; }
+.msg-item.unread .msg-item-subject { font-weight: 700; }
+.msg-unread-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; margin-top: 5px; }
+.msg-item-subject { font-size: 13px; font-weight: 500; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.msg-item-preview { font-size: 11.5px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.msg-item-meta { font-size: 10px; color: var(--text2); flex-shrink: 0; text-align: right; }
+
+.msg-detail-header { padding: 20px 24px; border-bottom: 1px solid var(--border); }
+.msg-detail-subject { font-family: 'DM Serif Display', serif; font-size: 22px; margin-bottom: 10px; }
+.msg-detail-body { padding: 20px 24px; font-size: 14px; line-height: 1.7; flex: 1; }
+.msg-meta-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+
+.msg-cat-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+}
+.cat-shortage  { background: #fff3e0; color: #e07a1f; }
+.cat-expiry    { background: #ffebee; color: #c1121f; }
+.cat-restock   { background: #e3f2fd; color: #1d6fa4; }
+.cat-general   { background: var(--surface2); color: var(--text2); }
+.cat-urgent    { background: #ffebee; color: #c1121f; border: 1px solid #c1121f; }
+.cat-system    { background: var(--accent-light); color: var(--accent); }
+
+.reply-box { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 10px; }
+
+.notif-item {
+  padding: 11px 16px; border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background .15s; display: flex; gap: 10px; align-items: flex-start;
+}
+.notif-item:hover { background: var(--surface2); }
+.notif-item.read { opacity: .65; }
+.notif-item-icon { font-size: 18px; flex-shrink: 0; }
+.notif-item-text strong { display: block; font-size: 12.5px; margin-bottom: 1px; }
+.notif-item-text span { font-size: 11px; color: var(--text2); }
+
+/* ── Auth Screen ──────────────────────────────────────── */
+#auth-screen {
+  position: fixed; inset: 0; z-index: 999;
+  background: linear-gradient(135deg, #1a2e22 0%, #2d6a4f 50%, #1a3a2a 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'DM Sans', sans-serif;
+}
+#auth-screen.hidden { display: none; }
+
+.auth-card {
+  background: #fff; border-radius: 24px;
+  width: 420px; max-width: 95vw;
+  box-shadow: 0 24px 80px rgba(0,0,0,.35);
+  overflow: hidden; animation: authIn .4s cubic-bezier(.16,1,.3,1);
+}
+@keyframes authIn {
+  from { transform: translateY(30px) scale(.97); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.auth-header {
+  background: linear-gradient(135deg, #2d6a4f, #52b788);
+  padding: 32px 36px 28px;
+  color: #fff;
+}
+.auth-logo { font-family: 'DM Serif Display', serif; font-size: 28px; margin-bottom: 4px; }
+.auth-tagline { font-size: 13px; opacity: .8; }
+.auth-title { font-size: 20px; font-weight: 600; margin-top: 18px; }
+
+.auth-body { padding: 28px 36px 32px; }
+
+.auth-tabs {
+  display: flex; background: #f0ede6; border-radius: 10px;
+  padding: 3px; margin-bottom: 22px;
+}
+.auth-tab {
+  flex: 1; padding: 8px; border: none; background: none;
+  border-radius: 8px; font-size: 13.5px; font-weight: 500;
+  cursor: pointer; font-family: inherit; color: #6b6560;
+  transition: all .2s;
+}
+.auth-tab.active {
+  background: #fff; color: #1a1714;
+  box-shadow: 0 1px 4px rgba(0,0,0,.1);
+}
+
+.auth-form { display: none; }
+.auth-form.active { display: block; }
+
+.auth-input-wrap { position: relative; margin-bottom: 14px; }
+.auth-input-wrap .auth-icon {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  font-size: 16px; pointer-events: none;
+}
+.auth-input {
+  width: 100%; padding: 11px 12px 11px 38px;
+  border: 1.5px solid #e2ddd6; border-radius: 10px;
+  font-family: inherit; font-size: 14px; color: #1a1714;
+  outline: none; transition: border .15s, box-shadow .15s;
+  background: #fafaf8;
+}
+.auth-input:focus { border-color: #2d6a4f; background: #fff; box-shadow: 0 0 0 3px rgba(45,106,79,.1); }
+.auth-input.error { border-color: #c1121f; }
+
+.auth-error {
+  background: #ffebee; border: 1px solid #f5c6cb;
+  border-radius: 8px; padding: 9px 12px;
+  font-size: 12.5px; color: #c1121f; margin-bottom: 14px;
+  display: none;
+}
+.auth-error.show { display: block; }
+
+.auth-btn {
+  width: 100%; padding: 12px; border: none; border-radius: 10px;
+  background: linear-gradient(135deg, #2d6a4f, #52b788);
+  color: #fff; font-size: 14.5px; font-weight: 600;
+  cursor: pointer; font-family: inherit; transition: all .2s;
+  margin-top: 4px; letter-spacing: .01em;
+}
+.auth-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(45,106,79,.35); }
+.auth-btn:active { transform: translateY(0); }
+
+.auth-divider {
+  display: flex; align-items: center; gap: 10px;
+  margin: 16px 0; color: #6b6560; font-size: 12px;
+}
+.auth-divider::before, .auth-divider::after {
+  content:''; flex:1; height:1px; background:#e2ddd6;
+}
+
+.auth-demo-btn {
+  width: 100%; padding: 10px; border: 1.5px dashed #95d5b2;
+  border-radius: 10px; background: #d8f3dc;
+  color: #2d6a4f; font-size: 13px; font-weight: 600;
+  cursor: pointer; font-family: inherit; transition: all .2s;
+}
+.auth-demo-btn:hover { background: #b7e4c7; }
+
+.auth-forgot {
+  text-align: right; margin-top: -8px; margin-bottom: 14px;
+}
+.auth-forgot a {
+  font-size: 12px; color: #2d6a4f; text-decoration: none; cursor: pointer;
+}
+.auth-forgot a:hover { text-decoration: underline; }
+
+.auth-footer { text-align: center; margin-top: 16px; font-size: 12.5px; color: #6b6560; }
+
+/* Password strength bar */
+.pwd-strength { margin-top: 6px; margin-bottom: 2px; }
+.pwd-strength-bar { height: 4px; border-radius: 2px; background: #e2ddd6; overflow: hidden; }
+.pwd-strength-fill { height: 100%; border-radius: 2px; transition: all .3s; }
+.pwd-strength-label { font-size: 11px; margin-top: 3px; }
+
+/* Forgot password panel */
+#forgot-panel { display: none; }
+#forgot-panel.show { display: block; }
+#login-main.hidden { display: none; }
+
+/* Show password toggle */
+.pwd-toggle {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer;
+  font-size: 16px; color: #6b6560; padding: 2px;
+}
+
+/* Sidebar user profile */
+.sidebar-user {
+  margin-top: auto; padding: 14px 16px;
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+  cursor: default;
+}
+.sidebar-user-info { flex: 1; overflow: hidden; }
+.sidebar-user-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sidebar-user-email { font-size: 11px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.logout-btn {
+  background: none; border: none; cursor: pointer;
+  color: var(--text2); font-size: 16px; padding: 4px;
+  border-radius: 6px; transition: all .15s; flex-shrink: 0;
+}
+.logout-btn:hover { background: var(--danger-light); color: var(--danger); }
+</style>
+</head>
+<body>
+
+<!-- ══ AUTH SCREEN ══════════════════════════════════════════ -->
+<div id="auth-screen">
+  <div class="auth-card">
+
+    <div class="auth-header">
+      <div class="auth-logo">🛒 GrocerIQ</div>
+      <div class="auth-tagline">Smart Grocery & Inventory Manager</div>
+      <div class="auth-title" id="auth-header-title">Welcome back</div>
+    </div>
+
+    <div class="auth-body">
+
+      <!-- Tabs -->
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Sign In</button>
+        <button class="auth-tab" id="tab-signup" onclick="switchAuthTab('signup')">Sign Up</button>
+      </div>
+
+      <!-- Error box -->
+      <div class="auth-error" id="auth-error"></div>
+
+      <!-- ── LOGIN FORM ── -->
+      <div class="auth-form active" id="form-login">
+        <div id="login-main">
+          <div class="auth-input-wrap">
+            <span class="auth-icon">📧</span>
+            <input class="auth-input" id="login-email" type="email" placeholder="Email address" autocomplete="email" />
+          </div>
+          <div class="auth-input-wrap">
+            <span class="auth-icon">🔒</span>
+            <input class="auth-input" id="login-password" type="password" placeholder="Password" autocomplete="current-password" />
+            <button class="pwd-toggle" type="button" onclick="togglePwd('login-password', this)">👁</button>
+          </div>
+          <div class="auth-forgot"><a onclick="showForgot()">Forgot password?</a></div>
+          <button class="auth-btn" onclick="handleLogin()">Sign In →</button>
+          <div class="auth-divider">or</div>
+          <button class="auth-demo-btn" onclick="demoLogin()">🚀 Try Demo Account</button>
+        </div>
+
+        <!-- Forgot password panel -->
+        <div id="forgot-panel">
+          <p style="font-size:13px;color:#6b6560;margin-bottom:16px">Enter your registered email and we'll send a reset link.</p>
+          <div class="auth-input-wrap">
+            <span class="auth-icon">📧</span>
+            <input class="auth-input" id="forgot-email" type="email" placeholder="Your email address" />
+          </div>
+          <button class="auth-btn" onclick="handleForgot()">Send Reset Link</button>
+          <div class="auth-footer" style="margin-top:12px">
+            <a style="color:#2d6a4f;cursor:pointer;font-size:13px" onclick="hideForgot()">← Back to Sign In</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SIGNUP FORM ── -->
+      <div class="auth-form" id="form-signup">
+        <div class="auth-input-wrap">
+          <span class="auth-icon">👤</span>
+          <input class="auth-input" id="signup-name" type="text" placeholder="Full name" autocomplete="name" />
+        </div>
+        <div class="auth-input-wrap">
+          <span class="auth-icon">📧</span>
+          <input class="auth-input" id="signup-email" type="email" placeholder="Email address" autocomplete="email" />
+        </div>
+        <div class="auth-input-wrap">
+          <span class="auth-icon">🔒</span>
+          <input class="auth-input" id="signup-password" type="password" placeholder="Create password" oninput="checkStrength(this.value)" autocomplete="new-password" />
+          <button class="pwd-toggle" type="button" onclick="togglePwd('signup-password', this)">👁</button>
+        </div>
+        <div class="pwd-strength" id="pwd-strength-wrap" style="display:none">
+          <div class="pwd-strength-bar"><div class="pwd-strength-fill" id="pwd-strength-fill"></div></div>
+          <div class="pwd-strength-label" id="pwd-strength-label"></div>
+        </div>
+        <div class="auth-input-wrap">
+          <span class="auth-icon">🔒</span>
+          <input class="auth-input" id="signup-confirm" type="password" placeholder="Confirm password" autocomplete="new-password" />
+          <button class="pwd-toggle" type="button" onclick="togglePwd('signup-confirm', this)">👁</button>
+        </div>
+        <div class="auth-input-wrap">
+          <span class="auth-icon">🏠</span>
+          <input class="auth-input" id="signup-household" type="text" placeholder="Household name (e.g. Sharma Family)" />
+        </div>
+        <button class="auth-btn" onclick="handleSignup()">Create Account →</button>
+        <div class="auth-divider">or</div>
+        <button class="auth-demo-btn" onclick="demoLogin()">🚀 Try Demo Account</button>
+      </div>
+
+      <div class="auth-footer">
+        By continuing you agree to our <a href="#" style="color:#2d6a4f">Terms</a> &amp; <a href="#" style="color:#2d6a4f">Privacy Policy</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+
+  <!-- ══ SIDEBAR ══════════════════════════════════════════ -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <h1>🛒 GrocerIQ</h1>
+      <span>Smart Inventory Manager</span>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-label">Main</div>
+      <button class="nav-item active" onclick="navigate('dashboard')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <span>Dashboard</span>
+      </button>
+      <button class="nav-item" onclick="navigate('grocery')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/><path d="m9 12 2 2 4-4"/></svg>
+        <span>Grocery List</span>
+        <span class="badge" id="badge-grocery">3</span>
+      </button>
+      <button class="nav-item" onclick="navigate('pantry')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>Pantry</span>
+      </button>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-label">Plan</div>
+      <button class="nav-item" onclick="navigate('recipes')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7H5a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2h-4V5a3 3 0 0 0-3-3z"/></svg>
+        <span>Recipes</span>
+      </button>
+      <button class="nav-item" onclick="navigate('prices')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <span>Price Tracker</span>
+      </button>
+      <button class="nav-item" onclick="navigate('alerts')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span>Alerts</span>
+        <span class="badge" id="badge-alerts">2</span>
+      </button>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-label">Settings</div>
+      <button class="nav-item" onclick="navigate('messages')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>Messages</span>
+        <span class="badge green" id="badge-messages">4</span>
+      </button>
+      <button class="nav-item" onclick="navigate('household')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Household</span>
+      </button>
+    </div>
+
+    <!-- Sidebar user profile -->
+    <div class="sidebar-user" id="sidebar-user">
+      <div class="avatar" id="sidebar-avatar" style="background:#2d6a4f">A</div>
+      <div class="sidebar-user-info">
+        <div class="sidebar-user-name" id="sidebar-username">Ayan Sharma</div>
+        <div class="sidebar-user-email" id="sidebar-useremail"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="ed8c948c83ad88958c809d8188c38e8280">[email&#160;protected]</a></div>
+      </div>
+      <button class="logout-btn" onclick="handleLogout()" title="Sign Out">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ══ MAIN ═════════════════════════════════════════════ -->
+  <main class="main">
+
+    <!-- ─ DASHBOARD ──────────────────────────────────────── -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Dashboard</div>
+          <div class="page-sub">Good morning, Ayan 👋 — Your pantry at a glance</div>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-outline btn-sm" onclick="openModal('import-modal')">📷 Scan Receipt</button>
+          <button class="btn btn-primary btn-sm" onclick="openModal('add-item-modal')">＋ Add Item</button>
+        </div>
+      </div>
+
+      <div style="padding:24px 28px">
+
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+          <div class="kpi ok">
+            <div class="kpi-label">Total Items</div>
+            <div class="kpi-val" style="color:var(--accent)">28</div>
+            <div class="kpi-sub">Across 6 categories</div>
+          </div>
+          <div class="kpi warn">
+            <div class="kpi-label">Low Stock</div>
+            <div class="kpi-val" style="color:var(--warn)">5</div>
+            <div class="kpi-sub">Need restocking soon</div>
+          </div>
+          <div class="kpi danger">
+            <div class="kpi-label">Expiring Soon</div>
+            <div class="kpi-val" style="color:var(--danger)">3</div>
+            <div class="kpi-sub">Within 3 days</div>
+          </div>
+          <div class="kpi info">
+            <div class="kpi-label">On Grocery List</div>
+            <div class="kpi-val" style="color:var(--info)">12</div>
+            <div class="kpi-sub">3 checked off</div>
+          </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="chart-row">
+          <div class="card">
+            <div class="section-head">
+              <h2>Stock by Category</h2>
+            </div>
+            <div class="bar-chart" id="stock-chart"></div>
+          </div>
+          <div class="card">
+            <div class="section-head">
+              <h2>Category Breakdown</h2>
+            </div>
+            <div class="category-pills" id="cat-pills"></div>
+          </div>
+        </div>
+
+        <!-- Recent Alerts -->
+        <div class="card" style="margin-bottom:24px">
+          <div class="section-head"><h2>Recent Alerts</h2><button class="btn btn-outline btn-sm" onclick="navigate('alerts')">View All →</button></div>
+          <div class="alert alert-danger"><span class="alert-icon">⚠️</span><div class="alert-text"><strong>Milk — Expiring in 1 day</strong>Use before 1 Apr or freeze immediately.</div></div>
+          <div class="alert alert-warn"><span class="alert-icon">📦</span><div class="alert-text"><strong>Rice — Low Stock (0.5 kg remaining)</strong>Auto-suggested to your grocery list.</div></div>
+          <div class="alert alert-ok"><span class="alert-icon">✅</span><div class="alert-text"><strong>Last week's digest sent</strong>No missed expiries this week.</div></div>
+        </div>
+
+        <!-- Suggestions Banner -->
+        <div class="card" style="background:linear-gradient(135deg,#d8f3dc,#b7e4c7); border-color:#95d5b2">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-weight:700;font-size:15px;margin-bottom:4px">🤖 Smart Restock Suggestions</div>
+              <div style="font-size:13px;color:var(--accent)">Based on your usage patterns, 5 items are ready to be added to your grocery list.</div>
+            </div>
+            <button class="btn btn-primary" onclick="addSuggestions()">Add All to List</button>
+          </div>
+        </div>
+
+        <!-- Email Alerts Status Card -->
+        <div class="card" style="margin-top:14px" id="email-status-card">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="width:40px;height:40px;border-radius:10px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:20px">📧</div>
+              <div>
+                <div style="font-weight:600;font-size:14px" id="email-card-title">Email Alerts: Not Configured</div>
+                <div style="font-size:12px;color:var(--text2)" id="email-card-sub">Set up EmailJS to receive shortage alerts at your registered email</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <div id="email-toggle-wrap" style="display:none;align-items:center;gap:8px">
+                <span style="font-size:12px;color:var(--text2)">Alerts</span>
+                <div onclick="toggleEmailAlerts()" id="email-toggle" style="width:40px;height:22px;border-radius:11px;background:var(--surface2);cursor:pointer;position:relative;transition:background .2s">
+                  <div id="email-toggle-thumb" style="position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:left .2s"></div>
+                </div>
+              </div>
+              <button class="btn btn-outline btn-sm" onclick="openModal('emailjs-setup-modal')" id="email-setup-btn">⚙️ Setup</button>
+              <button class="btn btn-primary btn-sm" id="email-send-now-btn" style="display:none" onclick="sendShortageEmailNow()">📨 Send Alert Now</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ─ GROCERY LIST ─────────────────────────────────── -->
+    <div class="page" id="page-grocery">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Grocery List</div>
+          <div class="page-sub">Main Shopping List — 12 items</div>
+        </div>
+        <div class="header-actions">
+          <div class="search-wrap">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input class="form-input search-input" id="grocery-search" placeholder="Search items…" style="width:200px" oninput="filterGrocery(this.value)" />
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="clearChecked()">Clear Checked</button>
+          <button class="btn btn-primary btn-sm" onclick="openModal('add-entry-modal')">＋ Add Item</button>
+        </div>
+      </div>
+
+      <div style="padding:24px 28px">
+        <div class="tabs">
+          <button class="tab-btn active" onclick="filterAisle('all',this)">All Items</button>
+          <button class="tab-btn" onclick="filterAisle('Produce',this)">🥬 Produce</button>
+          <button class="tab-btn" onclick="filterAisle('Dairy',this)">🥛 Dairy</button>
+          <button class="tab-btn" onclick="filterAisle('Grains',this)">🌾 Grains</button>
+          <button class="tab-btn" onclick="filterAisle('Other',this)">📦 Other</button>
+        </div>
+        <div id="grocery-list-container"></div>
+      </div>
+    </div>
+
+    <!-- ─ PANTRY ──────────────────────────────────────────── -->
+    <div class="page" id="page-pantry">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Pantry</div>
+          <div class="page-sub">Track inventory lots with expiry heat</div>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-primary btn-sm" onclick="openModal('add-lot-modal')">＋ Add Lot</button>
+        </div>
+      </div>
+      <div style="padding:24px 28px">
+        <div class="tabs">
+          <button class="tab-btn active" onclick="filterPantry('all',this)">All</button>
+          <button class="tab-btn" onclick="filterPantry('expiring',this)">⏰ Expiring</button>
+          <button class="tab-btn" onclick="filterPantry('ok',this)">✅ Stocked</button>
+          <button class="tab-btn" onclick="filterPantry('low',this)">⚠️ Low</button>
+        </div>
+        <div class="pantry-grid" id="pantry-grid"></div>
+      </div>
+    </div>
+
+    <!-- ─ RECIPES ──────────────────────────────────────────── -->
+    <div class="page" id="page-recipes">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Recipes</div>
+          <div class="page-sub">Auto-generate grocery lists from recipes</div>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-primary btn-sm" onclick="openModal('add-recipe-modal')">＋ Add Recipe</button>
+        </div>
+      </div>
+      <div style="padding:24px 28px">
+        <div class="recipe-grid" id="recipe-grid"></div>
+      </div>
+    </div>
+
+    <!-- ─ PRICE TRACKER ────────────────────────────────────── -->
+    <div class="page" id="page-prices">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Price Tracker</div>
+          <div class="page-sub">Monitor price trends & store comparisons</div>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-primary btn-sm" onclick="openModal('log-price-modal')">＋ Log Price</button>
+        </div>
+      </div>
+      <div style="padding:24px 28px">
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px" id="price-cards"></div>
+      </div>
+    </div>
+
+    <!-- ─ ALERTS ───────────────────────────────────────────── -->
+    <div class="page" id="page-alerts">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Alerts & Digests</div>
+          <div class="page-sub">Expiry alerts, low-stock notices & restock suggestions</div>
+        </div>
+      </div>
+      <div style="padding:24px 28px" id="alerts-container"></div>
+    </div>
+
+    <!-- ─ HOUSEHOLD ────────────────────────────────────────── -->
+    <div class="page" id="page-household">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Household</div>
+          <div class="page-sub">Manage members & shared access</div>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-outline btn-sm" onclick="openModal('emailjs-setup-modal')">📧 Email Alerts Setup</button>
+          <button class="btn btn-primary btn-sm" onclick="openModal('invite-modal')">＋ Invite Member</button>
+        </div>
+      </div>
+      <div style="padding:24px 28px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+          <div class="card">
+            <div class="section-head"><h2>Members</h2></div>
+            <div id="members-list"></div>
+          </div>
+          <div class="card">
+            <div class="section-head"><h2>Household Info</h2></div>
+            <div style="margin-bottom:12px">
+              <div class="form-label">Household Name</div>
+              <input class="form-input" value="Sharma Family Home" />
+            </div>
+            <div style="margin-bottom:12px">
+              <div class="form-label">Default Store</div>
+              <input class="form-input" value="BigBasket / D-Mart" />
+            </div>
+            <div style="margin-bottom:12px">
+              <div class="form-label">Currency</div>
+              <select class="form-select"><option>INR (₹)</option><option>USD ($)</option></select>
+            </div>
+            <button class="btn btn-primary btn-sm">Save Changes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─ MESSAGES ───────────────────────────────────────── -->
+    <div class="page" id="page-messages">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Messages</div>
+          <div class="page-sub">Pantry shortage alerts & household notifications</div>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-outline btn-sm" onclick="markAllRead()">✓ Mark All Read</button>
+          <button class="btn btn-primary btn-sm" onclick="openModal('compose-modal')">✏️ Send Message</button>
+        </div>
+      </div>
+      <div style="padding:24px 28px;display:grid;grid-template-columns:300px 1fr;gap:20px;height:calc(100vh - 81px);overflow:hidden" id="msg-layout">
+        <!-- Inbox list -->
+        <div class="card" style="padding:0;overflow-y:auto;display:flex;flex-direction:column">
+          <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:space-between">
+            Inbox
+            <span class="pill pill-ok" id="unread-count-pill">4 unread</span>
+          </div>
+          <div id="msg-inbox-list" style="flex:1;overflow-y:auto"></div>
+        </div>
+        <!-- Message detail -->
+        <div class="card" style="padding:0;overflow-y:auto;display:flex;flex-direction:column" id="msg-detail-panel">
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--text2);flex-direction:column;gap:10px;padding:40px">
+            <div style="font-size:40px">💬</div>
+            <div style="font-weight:600">Select a message to read</div>
+            <div style="font-size:13px;text-align:center">Shortage alerts and household messages appear here</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ══ MODALS ════════════════════════════════════════════════ -->
+
+<!-- Add Item Modal -->
+<div class="modal-overlay" id="add-item-modal" onclick="closeModalOutside(event,'add-item-modal')">
+  <div class="modal">
+    <div class="modal-title">Add Inventory Item</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Item Name *</label><input class="form-input" id="new-item-name" placeholder="e.g. Amul Milk" /></div>
+      <div class="form-group"><label class="form-label">Category</label><select class="form-select" id="new-item-cat"><option>Dairy</option><option>Produce</option><option>Grains</option><option>Snacks</option><option>Spices</option><option>Beverages</option></select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Quantity</label><input class="form-input" id="new-item-qty" type="number" placeholder="1" /></div>
+      <div class="form-group"><label class="form-label">Unit</label><select class="form-select" id="new-item-unit"><option>PIECE</option><option>KG</option><option>G</option><option>L</option><option>ML</option><option>PACK</option></select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Expiry Date</label><input class="form-input" id="new-item-expiry" type="date" /></div>
+      <div class="form-group"><label class="form-label">Barcode (optional)</label><input class="form-input" id="new-item-barcode" placeholder="EAN/UPC" /></div>
+    </div>
+    <div class="form-group"><label class="form-label">Preferred Aisle</label><input class="form-input" id="new-item-aisle" placeholder="e.g. Dairy Aisle 3" /></div>
+    <div class="form-actions">
+      <button class="btn btn-outline" onclick="closeModal('add-item-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addItem()">Add to Pantry</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Grocery Entry Modal -->
+<div class="modal-overlay" id="add-entry-modal" onclick="closeModalOutside(event,'add-entry-modal')">
+  <div class="modal">
+    <div class="modal-title">Add to Grocery List</div>
+    <div class="form-group"><label class="form-label">Item Name *</label><input class="form-input" id="entry-name" placeholder="e.g. Tomatoes" /></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Quantity</label><input class="form-input" id="entry-qty" type="number" placeholder="1" /></div>
+      <div class="form-group"><label class="form-label">Unit</label><select class="form-select" id="entry-unit"><option>PIECE</option><option>KG</option><option>G</option><option>L</option><option>ML</option><option>PACK</option></select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Aisle</label><select class="form-select" id="entry-aisle"><option>Produce</option><option>Dairy</option><option>Grains</option><option>Snacks</option><option>Other</option></select></div>
+      <div class="form-group"><label class="form-label">Priority</label><select class="form-select" id="entry-priority"><option>Normal</option><option>High</option><option>Low</option></select></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-outline" onclick="closeModal('add-entry-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addGroceryEntry()">Add to List</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Lot Modal -->
+<div class="modal-overlay" id="add-lot-modal" onclick="closeModalOutside(event,'add-lot-modal')">
+  <div class="modal">
+    <div class="modal-title">Add Inventory Lot</div>
+    <div class="form-group"><label class="form-label">Item Name *</label><input class="form-input" id="lot-name" placeholder="e.g. Amul Butter" /></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Quantity *</label><input class="form-input" id="lot-qty" type="number" placeholder="1" /></div>
+      <div class="form-group"><label class="form-label">Unit</label><select class="form-select" id="lot-unit"><option>PIECE</option><option>KG</option><option>G</option><option>L</option><option>ML</option><option>PACK</option></select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Bought At</label><input class="form-input" type="date" id="lot-bought" /></div>
+      <div class="form-group"><label class="form-label">Expiry Date</label><input class="form-input" type="date" id="lot-expiry" /></div>
+    </div>
+    <div class="form-group"><label class="form-label">Store / Notes</label><input class="form-input" id="lot-notes" placeholder="e.g. BigBasket, cold aisle" /></div>
+    <div class="form-actions">
+      <button class="btn btn-outline" onclick="closeModal('add-lot-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addLot()">Add Lot</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import Receipt Modal -->
+<div class="modal-overlay" id="import-modal" onclick="closeModalOutside(event,'import-modal')">
+  <div class="modal">
+    <div class="modal-title">📷 Scan / Import Receipt</div>
+    <div style="border:2px dashed var(--border);border-radius:12px;padding:32px;text-align:center;color:var(--text2);margin-bottom:18px;cursor:pointer" onclick="simulateOCR()">
+      <div style="font-size:32px;margin-bottom:8px">📄</div>
+      <div style="font-weight:600;margin-bottom:4px">Drop receipt image here</div>
+      <div style="font-size:12px">or click to select — JPG, PNG, PDF supported</div>
+    </div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px;text-align:center">— or simulate OCR parse —</div>
+    <button class="btn btn-primary" style="width:100%" onclick="simulateOCR()">🤖 Parse Receipt (Demo)</button>
+    <div id="ocr-result" style="margin-top:14px"></div>
+  </div>
+</div>
+
+<!-- Add Recipe Modal -->
+<div class="modal-overlay" id="add-recipe-modal" onclick="closeModalOutside(event,'add-recipe-modal')">
+  <div class="modal">
+    <div class="modal-title">Add Recipe</div>
+    <div class="form-group"><label class="form-label">Recipe Title *</label><input class="form-input" id="recipe-name" placeholder="e.g. Paneer Butter Masala" /></div>
+    <div class="form-group"><label class="form-label">Ingredients (comma separated)</label><input class="form-input" id="recipe-ings" placeholder="Paneer 200g, Tomato 3, Butter 2tbsp" /></div>
+    <div class="form-group"><label class="form-label">Servings</label><input class="form-input" type="number" id="recipe-servings" placeholder="4" /></div>
+    <div class="form-actions">
+      <button class="btn btn-outline" onclick="closeModal('add-recipe-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addRecipe()">Save Recipe</button>
+    </div>
+  </div>
+</div>
+
+<!-- Log Price Modal -->
+<div class="modal-overlay" id="log-price-modal" onclick="closeModalOutside(event,'log-price-modal')">
+  <div class="modal">
+    <div class="modal-title">Log Price</div>
+    <div class="form-group"><label class="form-label">Item *</label><input class="form-input" id="price-item" placeholder="e.g. Amul Milk 1L" /></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Price (₹) *</label><input class="form-input" id="price-val" type="number" placeholder="68" /></div>
+      <div class="form-group"><label class="form-label">Store</label><input class="form-input" id="price-store" placeholder="BigBasket" /></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-outline" onclick="closeModal('log-price-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="logPrice()">Log Price</button>
+    </div>
+  </div>
+</div>
+
+<!-- Invite Modal -->
+<div class="modal-overlay" id="invite-modal" onclick="closeModalOutside(event,'invite-modal')">
+  <div class="modal">
+    <div class="modal-title">Invite Member</div>
+    <div class="form-group"><label class="form-label">Email Address *</label><input class="form-input" id="invite-email" placeholder="family@example.com" /></div>
+    <div class="form-group"><label class="form-label">Role</label><select class="form-select" id="invite-role"><option>MEMBER</option><option>OWNER</option></select></div>
+    <div class="form-actions">
+      <button class="btn btn-outline" onclick="closeModal('invite-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="inviteMember()">Send Invite</button>
+    </div>
+  </div>
+</div>
+
+<!-- Compose Message Modal -->
+<div class="modal-overlay" id="compose-modal" onclick="closeModalOutside(event,'compose-modal')">
+  <div class="modal" style="width:480px">
+    <div class="modal-title">✏️ Send Message to Household</div>
+    <div class="form-group">
+      <label class="form-label">To</label>
+      <select class="form-select" id="msg-to">
+        <option value="all">📢 All Members</option>
+        <option value="owner">👑 Owner Only</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Category</label>
+      <select class="form-select" id="msg-category">
+        <option value="shortage">⚠️ Shortage Alert</option>
+        <option value="expiry">🗓️ Expiry Warning</option>
+        <option value="restock">📦 Restock Request</option>
+        <option value="general">💬 General Message</option>
+        <option value="urgent">🚨 Urgent</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Subject *</label>
+      <input class="form-input" id="msg-subject" placeholder="e.g. Milk is running low" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Message *</label>
+      <textarea class="form-input" id="msg-body" rows="4" placeholder="Write your message here…" style="resize:vertical"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Priority</label>
+      <select class="form-select" id="msg-priority">
+        <option value="normal">Normal</option>
+        <option value="high">🔴 High</option>
+        <option value="low">🔵 Low</option>
+      </select>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-outline" onclick="closeModal('compose-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="sendMessage()">📨 Send Message</button>
+    </div>
+  </div>
+</div>
+
+<!-- Notification Bell Dropdown (top-right) -->
+<div id="notif-bell" style="position:fixed;top:16px;right:24px;z-index:50">
+  <button onclick="toggleNotifPanel()" style="position:relative;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 10px;cursor:pointer;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--text2);transition:all .15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    <span id="bell-count-label">4</span>
+    <span id="bell-dot" style="position:absolute;top:6px;right:6px;width:8px;height:8px;background:var(--danger);border-radius:50%;border:2px solid #fff"></span>
+  </button>
+  <div id="notif-panel" style="display:none;position:absolute;top:46px;right:0;width:320px;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-lg);overflow:hidden;animation:authIn .2s ease">
+    <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <span style="font-weight:600;font-size:13px">Notifications</span>
+      <button onclick="markAllRead();toggleNotifPanel()" style="font-size:11px;color:var(--accent);background:none;border:none;cursor:pointer;font-weight:600">Mark all read</button>
+    </div>
+    <div id="notif-list" style="max-height:320px;overflow-y:auto"></div>
+    <div style="padding:10px 16px;border-top:1px solid var(--border);text-align:center">
+      <button onclick="navigate('messages');toggleNotifPanel()" style="font-size:12px;color:var(--accent);background:none;border:none;cursor:pointer;font-weight:600">View all messages →</button>
+    </div>
+  </div>
+</div>
+
+<!-- EmailJS Setup Modal -->
+<div class="modal-overlay" id="emailjs-setup-modal" onclick="closeModalOutside(event,'emailjs-setup-modal')">
+  <div class="modal" style="width:500px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <span style="font-size:28px">📧</span>
+      <div class="modal-title" style="margin-bottom:0">Email Notifications Setup</div>
+    </div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.6">
+      Connect EmailJS to send real shortage alerts to your registered email. It's free (200 emails/month) and takes 3 minutes to set up.
+    </p>
+
+    <!-- Step indicator -->
+    <div style="display:flex;gap:6px;margin-bottom:20px" id="ejs-steps">
+      <div style="flex:1;padding:8px;border-radius:8px;font-size:12px;font-weight:600;text-align:center;background:var(--accent);color:#fff">1. Create Account</div>
+      <div style="flex:1;padding:8px;border-radius:8px;font-size:12px;font-weight:600;text-align:center;background:var(--surface2);color:var(--text2)">2. Get Keys</div>
+      <div style="flex:1;padding:8px;border-radius:8px;font-size:12px;font-weight:600;text-align:center;background:var(--surface2);color:var(--text2)">3. Connect</div>
+    </div>
+
+    <!-- Instructions -->
+    <div style="background:var(--surface2);border-radius:10px;padding:14px;font-size:12.5px;line-height:1.8;margin-bottom:18px">
+      <strong style="display:block;margin-bottom:6px">📋 Quick Setup Guide:</strong>
+      <div>1. Go to <a href="https://www.emailjs.com" target="_blank" style="color:var(--accent);font-weight:600">emailjs.com</a> → Sign up free</div>
+      <div>2. Add an <strong>Email Service</strong> (Gmail recommended) → copy <strong>Service ID</strong></div>
+      <div>3. Create a <strong>Template</strong> using the template below → copy <strong>Template ID</strong></div>
+      <div>4. Go to <strong>Account → Public Key</strong> → copy it</div>
+      <div>5. Paste all 3 values below and click Save</div>
+    </div>
+
+    <!-- Template helper -->
+    <details style="margin-bottom:16px">
+      <summary style="cursor:pointer;font-size:12.5px;font-weight:600;color:var(--accent);padding:6px 0">📄 View EmailJS Template Variables (click to expand)</summary>
+      <div style="margin-top:10px;background:#1a1714;color:#d8f3dc;border-radius:8px;padding:14px;font-size:12px;font-family:monospace;line-height:1.8">
+        Subject: ⚠️ GrocerIQ Shortage Alert — {{household_name}}<br>
+        Body:<br>
+        Dear {{owner_name}},<br><br>
+        🚨 Shortage Alert from your GrocerIQ Pantry:<br><br>
+        {{shortage_list}}<br><br>
+        📅 Detected at: {{detected_at}}<br>
+        🏠 Household: {{household_name}}<br><br>
+        Please restock these items soon.<br><br>
+        — GrocerIQ Smart Pantry System<br>
+        Reply to: {{reply_to}}
+      </div>
+    </details>
+
+    <!-- Credentials form -->
+    <div class="form-group">
+      <label class="form-label">EmailJS Public Key *</label>
+      <input class="form-input" id="ejs-public-key" placeholder="e.g. abc123XYZ_your_public_key" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Service ID *</label>
+      <input class="form-input" id="ejs-service-id" placeholder="e.g. service_xxxxxxx" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Template ID *</label>
+      <input class="form-input" id="ejs-template-id" placeholder="e.g. template_xxxxxxx" />
+    </div>
+
+    <!-- Status indicator -->
+    <div id="ejs-status" style="display:none;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px"></div>
+
+    <div class="form-actions">
+      <button class="btn btn-outline" onclick="closeModal('emailjs-setup-modal')">Cancel</button>
+      <button class="btn btn-outline btn-sm" onclick="testEmailJS()" id="ejs-test-btn">🧪 Send Test Email</button>
+      <button class="btn btn-primary" onclick="saveEmailJSConfig()">💾 Save & Enable</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toast-container"></div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// ══════════════════════════════════════════════════════════
+//  DATA STORE
+// ══════════════════════════════════════════════════════════
+
+const state = {
+  inventory: [
+    { id:1, name:'Amul Milk 1L', category:'Dairy', qty:2, unit:'L', expiryAt:'2026-04-01', aisle:'Dairy', status:'expiring' },
+    { id:2, name:'Basmati Rice', category:'Grains', qty:0.5, unit:'KG', expiryAt:null, aisle:'Grains', status:'low' },
+    { id:3, name:'Tomatoes', category:'Produce', qty:6, unit:'PIECE', expiryAt:'2026-04-05', aisle:'Produce', status:'ok' },
+    { id:4, name:'Amul Butter 500g', category:'Dairy', qty:1, unit:'PIECE', expiryAt:'2026-04-15', aisle:'Dairy', status:'ok' },
+    { id:5, name:'Atta Whole Wheat', category:'Grains', qty:3, unit:'KG', expiryAt:null, aisle:'Grains', status:'ok' },
+    { id:6, name:'Potatoes', category:'Produce', qty:1, unit:'KG', expiryAt:null, aisle:'Produce', status:'low' },
+    { id:7, name:'Onions', category:'Produce', qty:2, unit:'KG', expiryAt:null, aisle:'Produce', status:'ok' },
+    { id:8, name:'Parle-G Biscuits', category:'Snacks', qty:3, unit:'PACK', expiryAt:'2026-06-01', aisle:'Other', status:'ok' },
+    { id:9, name:'Dahi (Curd) 500g', category:'Dairy', qty:1, unit:'PIECE', expiryAt:'2026-04-02', aisle:'Dairy', status:'expiring' },
+    { id:10, name:'Turmeric Powder', category:'Spices', qty:100, unit:'G', expiryAt:null, aisle:'Other', status:'ok' },
+    { id:11, name:'Toor Dal', category:'Grains', qty:0.3, unit:'KG', expiryAt:null, aisle:'Grains', status:'low' },
+    { id:12, name:'Cooking Oil', category:'Other', qty:1, unit:'L', expiryAt:null, aisle:'Other', status:'ok' },
+  ],
+
+  groceryList: [
+    { id:1, name:'Amul Milk 1L', qty:2, unit:'L', aisle:'Dairy', source:'lowstock', checked:false, priority:'High' },
+    { id:2, name:'Basmati Rice 5kg', qty:5, unit:'KG', aisle:'Grains', source:'lowstock', checked:false, priority:'High' },
+    { id:3, name:'Toor Dal', qty:1, unit:'KG', aisle:'Grains', source:'lowstock', checked:false, priority:'Normal' },
+    { id:4, name:'Spinach', qty:1, unit:'KG', aisle:'Produce', source:'manual', checked:false, priority:'Normal' },
+    { id:5, name:'Paneer 200g', qty:2, unit:'PIECE', aisle:'Dairy', source:'recipe', checked:true, priority:'Normal' },
+    { id:6, name:'Potatoes', qty:2, unit:'KG', aisle:'Produce', source:'suggestion', checked:false, priority:'Normal' },
+    { id:7, name:'Bread Brown', qty:1, unit:'PIECE', aisle:'Other', source:'manual', checked:true, priority:'Low' },
+    { id:8, name:'Green Chillies', qty:100, unit:'G', aisle:'Produce', source:'recipe', checked:false, priority:'Normal' },
+    { id:9, name:'Coriander', qty:1, unit:'PIECE', aisle:'Produce', source:'manual', checked:false, priority:'Low' },
+    { id:10, name:'Eggs (12)', qty:12, unit:'PIECE', aisle:'Dairy', source:'manual', checked:false, priority:'High' },
+    { id:11, name:'Sugar', qty:1, unit:'KG', aisle:'Other', source:'lowstock', checked:false, priority:'Normal' },
+    { id:12, name:'Salt', qty:1, unit:'KG', aisle:'Other', source:'manual', checked:true, priority:'Low' },
+  ],
+
+  recipes: [
+    { id:1, title:'Paneer Butter Masala', color:'#ff6b35', servings:4, time:'30 min', ings:['Paneer 200g','Tomato 3','Butter 2 tbsp','Cream 100ml','Onion 1','Ginger-Garlic Paste'] },
+    { id:2, title:'Dal Tadka', color:'#f4b942', servings:4, time:'25 min', ings:['Toor Dal 1 cup','Onion 1','Tomato 2','Ghee 2 tbsp','Cumin Seeds','Turmeric'] },
+    { id:3, title:'Aloo Sabzi', color:'#52b788', servings:3, time:'20 min', ings:['Potatoes 3','Onion 1','Green Chillies 2','Coriander','Mustard Seeds','Salt'] },
+    { id:4, title:'Jeera Rice', color:'#1d6fa4', servings:4, time:'15 min', ings:['Basmati Rice 2 cups','Cumin Seeds 1 tsp','Ghee 1 tbsp','Salt','Water 4 cups'] },
+  ],
+
+  prices: [
+    { item:'Amul Milk 1L', history:[{store:'BigBasket',price:64,date:'Mar 1'},{store:'DMart',price:62,date:'Mar 8'},{store:'BigBasket',price:65,date:'Mar 15'},{store:'BigBasket',price:64,date:'Mar 22'},{store:'DMart',price:61,date:'Mar 28'}] },
+    { item:'Basmati Rice 5kg', history:[{store:'BigBasket',price:450,date:'Feb 10'},{store:'DMart',price:440,date:'Feb 25'},{store:'BigBasket',price:455,date:'Mar 5'},{store:'DMart',price:438,date:'Mar 18'},{store:'BigBasket',price:450,date:'Mar 25'}] },
+    { item:'Cooking Oil 1L', history:[{store:'BigBasket',price:135,date:'Feb 5'},{store:'DMart',price:132,date:'Feb 20'},{store:'BigBasket',price:138,date:'Mar 1'},{store:'DMart',price:130,date:'Mar 14'},{store:'BigBasket',price:135,date:'Mar 27'}] },
+    { item:'Amul Butter 500g', history:[{store:'BigBasket',price:260,date:'Feb 12'},{store:'DMart',price:255,date:'Feb 26'},{store:'BigBasket',price:265,date:'Mar 8'},{store:'DMart',price:258,date:'Mar 20'},{store:'BigBasket',price:262,date:'Mar 28'}] },
+  ],
+
+  members: [
+    { name:'Ayan Sharma', email:'ayan@example.com', role:'OWNER', color:'#2d6a4f' },
+    { name:'Priya Sharma', email:'priya@example.com', role:'MEMBER', color:'#e07a1f' },
+    { name:'Raj Sharma', email:'raj@example.com', role:'MEMBER', color:'#1d6fa4' },
+  ],
+
+  messages: [
+    {
+      id: 1, from: '🤖 GrocerIQ Bot', to: 'Owner', category: 'shortage', priority: 'high',
+      subject: '⚠️ Shortage Alert: Basmati Rice & Toor Dal',
+      body: `Dear Owner,\n\nThis is an automated shortage alert from your pantry system.\n\n📦 Items running critically low:\n\n• Basmati Rice — Only 0.5 kg remaining (threshold: 2 kg)\n• Toor Dal — Only 0.3 kg remaining (threshold: 1 kg)\n• Potatoes — Only 1 kg remaining (threshold: 2 kg)\n\nThese items have been automatically added to your Grocery List for the next shopping trip.\n\nRecommended action: Purchase at least 5 kg Rice, 2 kg Dal, and 3 kg Potatoes.\n\n— GrocerIQ Pantry Monitor`,
+      time: 'Today, 7:02 AM', read: false, autoGenerated: true
+    },
+    {
+      id: 2, from: '🤖 GrocerIQ Bot', to: 'Owner', category: 'expiry', priority: 'high',
+      subject: '🥛 Expiry Warning: Milk & Curd Expiring Soon',
+      body: `Dear Owner,\n\nUrgent expiry notice from your pantry:\n\n🔴 Expiring in 1 day:\n• Amul Milk 1L (Lot #A21) — Expires 1 Apr 2026\n\n🟠 Expiring in 2 days:\n• Dahi (Curd) 500g — Expires 2 Apr 2026\n\nSuggested actions:\n✅ Plan meals that use milk today (tea, kheer, smoothie)\n✅ Use curd in raita or lassi tomorrow\n✅ Consider buying a fresh lot after consuming current stock\n\n— GrocerIQ Expiry Tracker`,
+      time: 'Today, 7:02 AM', read: false, autoGenerated: true
+    },
+    {
+      id: 3, from: 'Priya Sharma', to: 'Owner', category: 'restock', priority: 'normal',
+      subject: '📦 Please restock Cooking Oil & Sugar',
+      body: `Hi,\n\nJust noticed we're almost out of cooking oil (less than half a bottle left) and the sugar dabba is nearly empty too.\n\nCould you please add these to the next grocery order?\n\n• Cooking Oil — 1 or 2 litres (Fortune/Dhara)\n• Sugar — 1 kg pack\n\nAlso, if you're going to D-Mart, they have a good deal on toor dal this week.\n\nThanks!\n— Priya`,
+      time: 'Yesterday, 6:45 PM', read: false, autoGenerated: false
+    },
+    {
+      id: 4, from: 'Raj Sharma', to: 'Owner', category: 'general', priority: 'low',
+      subject: '💬 Grocery trip this weekend?',
+      body: `Hey,\n\nAre we doing a grocery run this Saturday or Sunday? I can come along if it's in the morning.\n\nAlso can we get some Maggi and bread? I've been having it for breakfast lately.\n\nLet me know!\n— Raj`,
+      time: 'Yesterday, 3:12 PM', read: false, autoGenerated: false
+    },
+    {
+      id: 5, from: '🤖 GrocerIQ Bot', to: 'Owner', category: 'system', priority: 'normal',
+      subject: '✅ Weekly Digest — 30 Mar 2026',
+      body: `Weekly Pantry Digest — 30 March 2026\n\n📊 Summary:\n• Total Items: 28 across 6 categories\n• Items Added This Week: 7\n• Items Consumed: 12\n• Items Expired: 0 ✅\n• New Grocery List Entries: 5 (auto-suggested)\n\n💰 Price Savings This Week:\n• Bought Rice from DMart at ₹438 (saved ₹17 vs BigBasket)\n\n📅 Upcoming Expiries (next 7 days):\n• Amul Milk — 1 Apr\n• Dahi — 2 Apr\n• Tomatoes — 5 Apr\n\nHave a great week!\n— GrocerIQ`,
+      time: 'Sun, 30 Mar, 7:00 AM', read: true, autoGenerated: true
+    },
+  ],
+
+  selectedMsgId: null,
+
+  alerts: [
+    { type:'danger', icon:'🥛', title:'Amul Milk — Expires in 1 day', desc:'Expiry: 1 Apr 2026. Use or freeze immediately.', time:'Just now' },
+    { type:'danger', icon:'🍶', title:'Dahi (Curd) — Expires in 2 days', desc:'Expiry: 2 Apr 2026. Plan consumption.', time:'1 hour ago' },
+    { type:'warn', icon:'🌾', title:'Basmati Rice — Low Stock (0.5 kg)', desc:'Minimum threshold reached. Auto-added to grocery list.', time:'3 hours ago' },
+    { type:'warn', icon:'🥔', title:'Potatoes — Low Stock (1 kg)', desc:'Running low. Consider buying 2 kg this week.', time:'5 hours ago' },
+    { type:'warn', icon:'🫘', title:'Toor Dal — Low Stock (0.3 kg)', desc:'Less than 1 meal worth remaining.', time:'Yesterday' },
+    { type:'ok', icon:'✅', title:'Weekly Digest Sent', desc:'7 items added to list automatically this week. No missed expiries.', time:'Yesterday' },
+    { type:'info', icon:'💡', title:'Suggestion: Add Spinach', desc:'You haven\'t bought spinach in 10 days — added to suggestions.', time:'2 days ago' },
+  ]
+};
+
+// ══════════════════════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════════════════════
+
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'"+page+"'")) {
+      n.classList.add('active');
+    }
+  });
+  renderPage(page);
+}
+
+function renderPage(page) {
+  if (page === 'grocery') renderGrocery();
+  if (page === 'pantry') renderPantry();
+  if (page === 'recipes') renderRecipes();
+  if (page === 'prices') renderPrices();
+  if (page === 'alerts') renderAlerts();
+  if (page === 'household') renderHousehold();
+  if (page === 'messages') renderMessages();
+}
+
+// ══════════════════════════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════════════════════════
+
+function initDashboard() {
+  const cats = {};
+  state.inventory.forEach(i => { cats[i.category] = (cats[i.category] || 0) + 1; });
+  const sorted = Object.entries(cats).sort((a,b)=>b[1]-a[1]);
+  const max = sorted[0][1];
+  const colors = { Dairy:'#1d6fa4', Produce:'#52b788', Grains:'#f4b942', Snacks:'#ff6b35', Spices:'#c1121f', Other:'#6b6560' };
+
+  document.getElementById('stock-chart').innerHTML = sorted.map(([cat, count]) =>
+    `<div class="bc-row">
+      <span class="bc-label">${cat}</span>
+      <div class="bc-bar-wrap"><div class="bc-bar" style="width:${(count/max)*100}%;background:${colors[cat]||'#52b788'}"></div></div>
+      <span class="bc-val">${count}</span>
+    </div>`
+  ).join('');
+
+  const emojis = { Dairy:'🥛', Produce:'🥦', Grains:'🌾', Snacks:'🍪', Spices:'🌶️', Other:'📦' };
+  document.getElementById('cat-pills').innerHTML = sorted.map(([cat, count]) =>
+    `<div class="cat-pill" style="background:${colors[cat]}1a;color:${colors[cat]}">${emojis[cat]||'📦'} ${cat} <strong style="margin-left:4px">${count}</strong></div>`
+  ).join('');
+}
+
+// ══════════════════════════════════════════════════════════
+//  GROCERY LIST
+// ══════════════════════════════════════════════════════════
+
+let groceryFilter = 'all';
+let grocerySearch = '';
+
+function renderGrocery(filter, search) {
+  if (filter !== undefined) groceryFilter = filter;
+  if (search !== undefined) grocerySearch = search;
+
+  let items = [...state.groceryList];
+  if (groceryFilter !== 'all') items = items.filter(i => i.aisle === groceryFilter);
+  if (grocerySearch) items = items.filter(i => i.name.toLowerCase().includes(grocerySearch.toLowerCase()));
+
+  const aisles = {};
+  items.forEach(i => {
+    if (!aisles[i.aisle]) aisles[i.aisle] = [];
+    aisles[i.aisle].push(i);
+  });
+
+  const aisleEmoji = { Produce:'🥬', Dairy:'🥛', Grains:'🌾', Snacks:'🍪', Other:'📦' };
+  const sourceColor = { lowstock:'pill-danger', recipe:'pill-info', suggestion:'pill-warn', manual:'pill-gray' };
+
+  let html = '';
+  if (items.length === 0) {
+    html = `<div class="empty"><div class="empty-icon">🛒</div><p>No items found. Add something to your list!</p></div>`;
+  } else {
+    for (const [aisle, aisleItems] of Object.entries(aisles)) {
+      html += `<div class="list-group">
+        <div class="list-group-title">${aisleEmoji[aisle]||'📦'} ${aisle} Aisle <span style="margin-left:6px;font-weight:400;opacity:.7">${aisleItems.length} items</span></div>`;
+      aisleItems.forEach(item => {
+        const sc = sourceColor[item.source] || 'pill-gray';
+        html += `<div class="list-item ${item.checked?'checked':''}" id="li-${item.id}">
+          <div class="li-check ${item.checked?'done':''}" onclick="toggleCheck(${item.id})">
+            ${item.checked?'<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>':''}
+          </div>
+          <div style="flex:1">
+            <div class="li-name">${item.name}</div>
+            <div class="li-meta">${item.qty} ${item.unit}</div>
+          </div>
+          <span class="pill ${sc}">${item.source}</span>
+          ${item.priority==='High'?'<span class="pill pill-danger">High</span>':''}
+          <button class="btn-icon" style="padding:4px;border:none;background:none;font-size:16px;cursor:pointer;color:var(--text2)" onclick="removeGrocery(${item.id})">×</button>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+  }
+
+  document.getElementById('grocery-list-container').innerHTML = html;
+  updateGroceryBadge();
+}
+
+function toggleCheck(id) {
+  const item = state.groceryList.find(i => i.id === id);
+  if (item) { item.checked = !item.checked; renderGrocery(); }
+}
+
+function removeGrocery(id) {
+  state.groceryList = state.groceryList.filter(i => i.id !== id);
+  renderGrocery();
+  showToast('Item removed from list', 'success');
+}
+
+function clearChecked() {
+  state.groceryList = state.groceryList.filter(i => !i.checked);
+  renderGrocery();
+  showToast('Checked items cleared', 'success');
+}
+
+function filterAisle(aisle, btn) {
+  document.querySelectorAll('#page-grocery .tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderGrocery(aisle);
+}
+
+function filterGrocery(val) { renderGrocery(undefined, val); }
+
+function addGroceryEntry() {
+  const name = document.getElementById('entry-name').value.trim();
+  if (!name) { showToast('Please enter an item name', 'error'); return; }
+  const qty = parseFloat(document.getElementById('entry-qty').value) || 1;
+  const unit = document.getElementById('entry-unit').value;
+  const aisle = document.getElementById('entry-aisle').value;
+  const priority = document.getElementById('entry-priority').value;
+  const newId = Math.max(...state.groceryList.map(i=>i.id), 0) + 1;
+  state.groceryList.push({ id: newId, name, qty, unit, aisle, source:'manual', checked: false, priority });
+  closeModal('add-entry-modal');
+  document.getElementById('entry-name').value = '';
+  renderGrocery();
+  showToast(`"${name}" added to grocery list!`, 'success');
+}
+
+function updateGroceryBadge() {
+  const unchecked = state.groceryList.filter(i => !i.checked).length;
+  const b = document.getElementById('badge-grocery');
+  if (b) { b.textContent = unchecked; b.style.display = unchecked ? '' : 'none'; }
+}
+
+// ══════════════════════════════════════════════════════════
+//  PANTRY
+// ══════════════════════════════════════════════════════════
+
+let pantryFilter = 'all';
+
+function renderPantry(filter) {
+  if (filter !== undefined) pantryFilter = filter;
+  let items = [...state.inventory];
+  if (pantryFilter === 'expiring') items = items.filter(i => i.status === 'expiring');
+  if (pantryFilter === 'low') items = items.filter(i => i.status === 'low');
+  if (pantryFilter === 'ok') items = items.filter(i => i.status === 'ok');
+
+  const catEmoji = { Dairy:'🥛', Produce:'🥦', Grains:'🌾', Snacks:'🍪', Spices:'🌶️', Other:'📦' };
+
+  document.getElementById('pantry-grid').innerHTML = items.map(item => {
+    const dl = item.expiryAt ? Math.ceil((new Date(item.expiryAt) - Date.now()) / 86400000) : null;
+    let badge, badgeClass;
+    if (dl === null) { badge = 'No expiry'; badgeClass = 'pill-gray'; }
+    else if (dl < 0) { badge = 'Expired'; badgeClass = 'pill-danger'; }
+    else if (dl <= 3) { badge = `${dl}d left`; badgeClass = 'pill-danger'; }
+    else if (dl <= 7) { badge = `${dl}d left`; badgeClass = 'pill-warn'; }
+    else { badge = `${dl}d left`; badgeClass = 'pill-ok'; }
+
+    const stockPct = item.status === 'low' ? 20 : item.status === 'expiring' ? 60 : 80;
+    const fillColor = item.status === 'low' ? 'var(--danger)' : item.status === 'expiring' ? 'var(--warn)' : 'var(--accent-mid)';
+
+    return `<div class="pantry-card">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px">
+        <div>
+          <div class="pc-name">${catEmoji[item.category]||'📦'} ${item.name}</div>
+          <div class="pc-qty">${item.qty} ${item.unit} • ${item.category}</div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="consumeItem(${item.id})">Use</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div class="stock-bar" style="width:100%"><div class="stock-fill" style="width:${stockPct}%;background:${fillColor}"></div></div>
+        <span style="font-size:11px;color:var(--text2);flex-shrink:0">${item.status}</span>
+      </div>
+      <div class="pc-expiry"><span class="pill ${badgeClass}">${badge}</span>${item.aisle ? `<span style="font-size:11px;color:var(--text2)">${item.aisle} Aisle</span>`:''}</div>
+    </div>`;
+  }).join('') || `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">📦</div><p>No items found in this filter.</p></div>`;
+}
+
+function filterPantry(filter, btn) {
+  document.querySelectorAll('#page-pantry .tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPantry(filter);
+}
+
+function consumeItem(id) { consumeItemWithEmailCheck(id); }
+
+function addItem() {
+  const name = document.getElementById('new-item-name').value.trim();
+  if (!name) { showToast('Please enter an item name', 'error'); return; }
+  const qty = parseFloat(document.getElementById('new-item-qty').value) || 1;
+  const unit = document.getElementById('new-item-unit').value;
+  const category = document.getElementById('new-item-cat').value;
+  const expiry = document.getElementById('new-item-expiry').value;
+  const aisle = document.getElementById('new-item-aisle').value || category;
+  const id = Math.max(...state.inventory.map(i=>i.id), 0) + 1;
+  state.inventory.push({ id, name, category, qty, unit, expiryAt: expiry || null, aisle, status:'ok' });
+  closeModal('add-item-modal');
+  document.getElementById('new-item-name').value = '';
+  document.getElementById('new-item-qty').value = '';
+  document.getElementById('new-item-expiry').value = '';
+  showToast(`"${name}" added to pantry!`, 'success');
+  renderPantry();
+}
+
+function addLot() {
+  const name = document.getElementById('lot-name').value.trim();
+  const qty = parseFloat(document.getElementById('lot-qty').value);
+  if (!name || !qty) { showToast('Please fill required fields', 'error'); return; }
+  const unit = document.getElementById('lot-unit').value;
+  const expiry = document.getElementById('lot-expiry').value;
+  const id = Math.max(...state.inventory.map(i=>i.id), 0) + 1;
+  state.inventory.push({ id, name, category:'Other', qty, unit, expiryAt: expiry||null, aisle:'Other', status:'ok' });
+  closeModal('add-lot-modal');
+  document.getElementById('lot-name').value = '';
+  document.getElementById('lot-qty').value = '';
+  document.getElementById('lot-expiry').value = '';
+  showToast(`Lot for "${name}" added!`, 'success');
+  renderPantry();
+}
+
+// ══════════════════════════════════════════════════════════
+//  RECIPES
+// ══════════════════════════════════════════════════════════
+
+function renderRecipes() {
+  document.getElementById('recipe-grid').innerHTML = state.recipes.map(r =>
+    `<div class="recipe-card">
+      <div class="recipe-banner" style="background:${r.color}"></div>
+      <div class="recipe-body">
+        <div class="recipe-title">${r.title}</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:10px">🍽️ ${r.servings} servings • ⏱️ ${r.time}</div>
+        <div class="recipe-ings">
+          ${r.ings.map(ing => `<span class="pill pill-gray">${ing}</span>`).join('')}
+        </div>
+        <button class="btn btn-primary btn-sm recipe-add-btn" onclick="addRecipeToList(${r.id})">🛒 Add to Grocery List</button>
+      </div>
+    </div>`
+  ).join('');
+}
+
+function addRecipeToList(recipeId) {
+  const recipe = state.recipes.find(r => r.id === recipeId);
+  if (!recipe) return;
+  recipe.ings.forEach(ing => {
+    const parts = ing.split(' ');
+    const name = parts.slice(0,-1).join(' ') || ing;
+    const qty = parseFloat(parts[parts.length-1]) || 1;
+    const unit = isNaN(parseFloat(parts[parts.length-1])) ? 'PIECE' : 'PIECE';
+    const newId = Math.max(...state.groceryList.map(i=>i.id), 0) + 1;
+    state.groceryList.push({ id: newId, name: ing, qty: 1, unit: 'PIECE', aisle:'Other', source:'recipe', checked:false, priority:'Normal' });
+  });
+  showToast(`${recipe.title} ingredients added to list!`, 'success');
+  updateGroceryBadge();
+}
+
+function addRecipe() {
+  const title = document.getElementById('recipe-name').value.trim();
+  if (!title) { showToast('Enter a recipe title', 'error'); return; }
+  const ingsRaw = document.getElementById('recipe-ings').value;
+  const ings = ingsRaw.split(',').map(s => s.trim()).filter(Boolean);
+  const servings = parseInt(document.getElementById('recipe-servings').value) || 4;
+  const colors = ['#ff6b35','#f4b942','#52b788','#1d6fa4','#9c27b0','#e91e63'];
+  const id = Math.max(...state.recipes.map(r=>r.id), 0) + 1;
+  state.recipes.push({ id, title, color: colors[id % colors.length], servings, time:'~30 min', ings });
+  closeModal('add-recipe-modal');
+  document.getElementById('recipe-name').value = '';
+  document.getElementById('recipe-ings').value = '';
+  renderRecipes();
+  showToast(`"${title}" recipe added!`, 'success');
+}
+
+// ══════════════════════════════════════════════════════════
+//  PRICES
+// ══════════════════════════════════════════════════════════
+
+function renderPrices() {
+  if (state.prices.length === 0) {
+    document.getElementById('price-cards').innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">💸</div><p>No price entries yet. Click "＋ Log Price" to start tracking.</p></div>`;
+    return;
+  }
+  document.getElementById('price-cards').innerHTML = state.prices.map((p, pi) => {
+    const vals = p.history.map(h => h.price);
+    const min = Math.min(...vals);
+    const max = Math.max(...vals);
+    const last = vals[vals.length-1];
+    const prev = vals.length >= 2 ? vals[vals.length-2] : last;
+    const trend = last > prev ? '↑' : last < prev ? '↓' : '→';
+    const trendColor = last > prev ? 'var(--danger)' : last < prev ? 'var(--accent)' : 'var(--text2)';
+    const barMaxH = 50;
+    const bars = p.history.map(h => {
+      const h2 = Math.round(((h.price - min) / (max - min + 1)) * barMaxH) + 8;
+      return `<div class="price-bar-wrap">
+        <div class="price-bar-col" style="height:${h2}px;background:var(--accent-light);border:1px solid var(--accent-mid)"></div>
+        <div class="price-bar-lbl">${h.date.split(' ').pop()}</div>
+      </div>`;
+    }).join('');
+
+    // History rows with per-entry delete button
+    const historyRows = p.history.map((h, hi) =>
+      `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)" id="price-row-${pi}-${hi}">
+        <span style="flex:1;font-size:13px;font-weight:500">₹${h.price}</span>
+        <span class="pill pill-gray" style="font-size:11px">${h.store}</span>
+        <span style="font-size:11px;color:var(--text2);min-width:42px;text-align:right">${h.date}</span>
+        <button onclick="removePriceEntry(${pi},${hi})" title="Remove this entry"
+          style="border:none;background:none;cursor:pointer;color:var(--danger);font-size:16px;line-height:1;padding:2px 4px;border-radius:4px;transition:background .15s"
+          onmouseover="this.style.background='var(--danger-light)'" onmouseout="this.style.background='none'">×</button>
+      </div>`
+    ).join('');
+
+    return `<div class="card">
+      <!-- Card header -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px">
+        <div>
+          <div style="font-weight:600;font-size:15px">${p.item}</div>
+          <div style="font-size:12px;color:var(--text2)">Last: ₹${last} at ${p.history[p.history.length-1].store}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:22px;font-weight:700;color:${trendColor}">${trend}</span>
+          <button onclick="removePriceCard(${pi})" title="Delete entire item"
+            class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger);padding:4px 9px;font-size:12px">
+            🗑 Delete
+          </button>
+        </div>
+      </div>
+
+      <!-- Min / Max -->
+      <div style="display:flex;justify-content:space-between;margin:4px 0 6px">
+        <span style="font-size:11px;color:var(--text2)">Min: ₹${min}</span>
+        <span style="font-size:11px;color:var(--text2)">Max: ₹${max}</span>
+      </div>
+
+      <!-- Bar chart -->
+      <div class="price-chart">${bars}</div>
+
+      <!-- Store pills -->
+      <div style="margin:10px 0 12px;display:flex;flex-wrap:wrap;gap:6px">
+        ${[...new Set(p.history.map(h=>h.store))].map(s => {
+          const storeMin = Math.min(...p.history.filter(h=>h.store===s).map(h=>h.price));
+          return `<span class="pill pill-gray">${s}: ₹${storeMin}</span>`;
+        }).join('')}
+      </div>
+
+      <!-- History log with delete buttons -->
+      <div style="border-top:1px solid var(--border);padding-top:10px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text2);margin-bottom:4px">Price History</div>
+        ${historyRows}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function removePriceEntry(pi, hi) {
+  const item = state.prices[pi].item;
+  state.prices[pi].history.splice(hi, 1);
+  if (state.prices[pi].history.length === 0) {
+    state.prices.splice(pi, 1);
+    showToast(`All entries removed. "${item}" deleted.`, 'warn');
+  } else {
+    showToast('Price entry removed.', 'success');
+  }
+  renderPrices();
+}
+
+function removePriceCard(pi) {
+  const item = state.prices[pi].item;
+  state.prices.splice(pi, 1);
+  renderPrices();
+  showToast(`"${item}" removed from price tracker.`, 'success');
+}
+
+function logPrice() {
+  const item = document.getElementById('price-item').value.trim();
+  const price = parseFloat(document.getElementById('price-val').value);
+  const store = document.getElementById('price-store').value || 'Unknown';
+  if (!item || !price) { showToast('Please fill required fields', 'error'); return; }
+  const existing = state.prices.find(p => p.item.toLowerCase() === item.toLowerCase());
+  if (existing) {
+    existing.history.push({ store, price, date: 'Today' });
+  } else {
+    state.prices.push({ item, history: [{ store, price, date:'Today' }] });
+  }
+  closeModal('log-price-modal');
+  document.getElementById('price-item').value = '';
+  document.getElementById('price-val').value = '';
+  document.getElementById('price-store').value = '';
+  renderPrices();
+  showToast(`Price logged for "${item}"!`, 'success');
+}
+
+// ══════════════════════════════════════════════════════════
+//  ALERTS
+// ══════════════════════════════════════════════════════════
+
+function renderAlerts() {
+  const typeMap = { danger:'alert-danger', warn:'alert-warn', ok:'alert-ok', info:'alert-info' };
+  document.getElementById('alerts-container').innerHTML = `
+    <div class="card" style="margin-bottom:20px">
+      <div class="section-head"><h2>Active Alerts</h2><span class="pill pill-danger">${state.alerts.filter(a=>a.type==='danger').length} critical</span></div>
+      ${state.alerts.map(a => `<div class="alert ${typeMap[a.type]||'alert-info'}">
+        <span class="alert-icon">${a.icon}</span>
+        <div class="alert-text" style="flex:1"><strong>${a.title}</strong>${a.desc}</div>
+        <span style="font-size:11px;color:var(--text2);flex-shrink:0">${a.time}</span>
+      </div>`).join('')}
+    </div>
+  `;
+  document.getElementById('badge-alerts').textContent = state.alerts.filter(a=>a.type==='danger'||a.type==='warn').length;
+}
+
+// ══════════════════════════════════════════════════════════
+//  HOUSEHOLD
+// ══════════════════════════════════════════════════════════
+
+function renderHousehold() {
+  const roleColor = { OWNER:'pill-ok', MEMBER:'pill-info' };
+  document.getElementById('members-list').innerHTML = state.members.map(m =>
+    `<div class="member-row">
+      <div class="avatar" style="background:${m.color}">${m.name.split(' ').map(x=>x[0]).join('')}</div>
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:13.5px">${m.name}</div>
+        <div style="font-size:12px;color:var(--text2)">${m.email}</div>
+      </div>
+      <span class="pill ${roleColor[m.role]}">${m.role}</span>
+    </div>`
+  ).join('');
+}
+
+function inviteMember() {
+  const email = document.getElementById('invite-email').value.trim();
+  if (!email) { showToast('Enter an email address', 'error'); return; }
+  const role = document.getElementById('invite-role').value;
+  const name = email.split('@')[0].replace(/[._]/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+  const colors = ['#2d6a4f','#e07a1f','#1d6fa4','#9c27b0','#c1121f'];
+  state.members.push({ name, email, role, color: colors[state.members.length % colors.length] });
+  closeModal('invite-modal');
+  document.getElementById('invite-email').value = '';
+  renderHousehold();
+  showToast(`Invite sent to ${email}!`, 'success');
+}
+
+// ══════════════════════════════════════════════════════════
+//  OCR SIMULATION
+// ══════════════════════════════════════════════════════════
+
+function simulateOCR() {
+  const result = document.getElementById('ocr-result');
+  result.innerHTML = `<div style="text-align:center;padding:16px;font-size:13px;color:var(--text2)">🔄 Parsing receipt…</div>`;
+  setTimeout(() => {
+    const items = [
+      { name:'Amul Milk 1L', qty:2, unit:'L', price:64 },
+      { name:'Tomatoes 1kg', qty:1, unit:'KG', price:32 },
+      { name:'Parle-G Biscuits', qty:1, unit:'PACK', price:10 },
+      { name:'Cooking Oil 1L', qty:1, unit:'L', price:135 },
+    ];
+    result.innerHTML = `
+      <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:12px">
+        ${items.map(i => `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border)">
+          <span style="flex:1;font-weight:500">${i.name}</span>
+          <span style="color:var(--text2);font-size:12px">${i.qty} ${i.unit}</span>
+          <span style="font-weight:600">₹${i.price}</span>
+        </div>`).join('')}
+        <div style="padding:10px 14px;font-weight:700;font-size:13px;text-align:right">Total: ₹${items.reduce((a,i)=>a+i.price,0)}</div>
+      </div>
+      <button class="btn btn-primary" style="width:100%" onclick="importOCR()">✅ Import to Pantry</button>
+    `;
+  }, 1200);
+}
+
+function importOCR() {
+  const items = ['Amul Milk 1L','Tomatoes 1kg','Parle-G Biscuits','Cooking Oil 1L'];
+  items.forEach(name => {
+    const id = Math.max(...state.inventory.map(i=>i.id), 0) + 1;
+    state.inventory.push({ id, name, category:'Other', qty:1, unit:'PIECE', expiryAt:null, aisle:'Other', status:'ok' });
+  });
+  closeModal('import-modal');
+  showToast('4 items imported from receipt!', 'success');
+  document.getElementById('ocr-result').innerHTML = '';
+}
+
+// ══════════════════════════════════════════════════════════
+//  SUGGESTIONS
+// ══════════════════════════════════════════════════════════
+
+function addSuggestions() {
+  const suggestions = ['Tomatoes 2kg','Onions 2kg','Green Chillies','Ginger','Garlic'];
+  suggestions.forEach(name => {
+    const newId = Math.max(...state.groceryList.map(i=>i.id), 0) + 1;
+    state.groceryList.push({ id: newId, name, qty:1, unit:'PIECE', aisle:'Produce', source:'suggestion', checked:false, priority:'Normal' });
+  });
+  showToast('5 suggested items added to your list!', 'success');
+  updateGroceryBadge();
+}
+
+// ══════════════════════════════════════════════════════════
+//  MODALS
+// ══════════════════════════════════════════════════════════
+
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  if (id === 'emailjs-setup-modal') {
+    loadEJSConfigToForm();
+    document.getElementById('ejs-status').style.display = 'none';
+  }
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function closeModalOutside(e, id) { if (e.target.id === id) closeModal(id); }
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+});
+
+// ══════════════════════════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════════════════════════
+
+function showToast(msg, type = '') {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  const icons = { success:'✅', warn:'⚠️', error:'❌' };
+  t.innerHTML = `<span>${icons[type]||'ℹ️'}</span> ${msg}`;
+  c.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; t.style.transform='translateX(20px)'; t.style.transition='all .3s'; setTimeout(() => t.remove(), 300); }, 2800);
+}
+
+// ══════════════════════════════════════════════════════════
+//  MESSAGING SYSTEM
+// ══════════════════════════════════════════════════════════
+
+const catMeta = {
+  shortage: { label:'⚠️ Shortage',  cls:'cat-shortage' },
+  expiry:   { label:'🗓️ Expiry',    cls:'cat-expiry'   },
+  restock:  { label:'📦 Restock',   cls:'cat-restock'  },
+  general:  { label:'💬 General',   cls:'cat-general'  },
+  urgent:   { label:'🚨 Urgent',    cls:'cat-urgent'   },
+  system:   { label:'🤖 System',    cls:'cat-system'   },
+};
+
+function renderMessages() {
+  renderInboxList();
+  updateMessageBadge();
+  // Auto-select first unread or first message
+  if (!state.selectedMsgId) {
+    const first = state.messages[0];
+    if (first) openMessage(first.id);
+  }
+}
+
+function renderInboxList() {
+  const unread = state.messages.filter(m => !m.read).length;
+  const pill = document.getElementById('unread-count-pill');
+  if (pill) pill.textContent = unread ? `${unread} unread` : 'All read';
+
+  document.getElementById('msg-inbox-list').innerHTML = state.messages.length === 0
+    ? `<div class="empty"><div class="empty-icon">📭</div><p>No messages yet.</p></div>`
+    : state.messages.map(m => {
+        const cm = catMeta[m.category] || catMeta.general;
+        const isActive = state.selectedMsgId === m.id;
+        return `<div class="msg-item ${m.read?'':'unread'} ${isActive?'active':''}" onclick="openMessage(${m.id})">
+          <div style="flex-shrink:0;margin-top:2px">
+            ${!m.read ? `<div class="msg-unread-dot"></div>` : `<div style="width:8px"></div>`}
+          </div>
+          <div style="flex:1;overflow:hidden">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+              <span class="msg-cat-badge ${cm.cls}" style="font-size:10px;padding:2px 7px">${cm.label}</span>
+              ${m.priority==='high' ? `<span style="font-size:10px;color:var(--danger);font-weight:700">● HIGH</span>` : ''}
+            </div>
+            <div class="msg-item-subject">${m.subject}</div>
+            <div class="msg-item-preview">${m.from} · ${m.body.slice(0,60).replace(/\n/g,' ')}…</div>
+          </div>
+          <div class="msg-item-meta">${m.time.split(',')[0]}</div>
+        </div>`;
+      }).join('');
+}
+
+function openMessage(id) {
+  state.selectedMsgId = id;
+  const m = state.messages.find(msg => msg.id === id);
+  if (!m) return;
+  m.read = true;
+  renderInboxList();
+  updateMessageBadge();
+  renderNotifPanel();
+
+  const cm = catMeta[m.category] || catMeta.general;
+  const bodyHtml = m.body.split('\n').map(line => {
+    if (!line.trim()) return '<br>';
+    if (line.startsWith('•')) return `<div style="margin:4px 0 4px 12px;display:flex;gap:8px"><span style="color:var(--accent)">•</span><span>${line.slice(1).trim()}</span></div>`;
+    if (line.startsWith('✅')||line.startsWith('🔴')||line.startsWith('🟠')||line.startsWith('📦')||line.startsWith('📊')||line.startsWith('💰')||line.startsWith('📅')) return `<div style="margin:5px 0">${line}</div>`;
+    return `<p style="margin:3px 0">${line}</p>`;
+  }).join('');
+
+  document.getElementById('msg-detail-panel').innerHTML = `
+    <div class="msg-detail-header">
+      <div class="msg-detail-subject">${m.subject}</div>
+      <div class="msg-meta-row">
+        <span class="msg-cat-badge ${cm.cls}">${cm.label}</span>
+        ${m.priority==='high' ? `<span class="pill pill-danger">High Priority</span>` : ''}
+        ${m.autoGenerated ? `<span class="pill pill-ok">Auto-Generated</span>` : ''}
+      </div>
+      <div style="font-size:12.5px;color:var(--text2);margin-top:8px;display:flex;gap:16px;flex-wrap:wrap">
+        <span><strong style="color:var(--text)">From:</strong> ${m.from}</span>
+        <span><strong style="color:var(--text)">To:</strong> ${m.to}</span>
+        <span><strong style="color:var(--text)">Time:</strong> ${m.time}</span>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn btn-outline btn-sm" onclick="deleteMessage(${m.id})">🗑 Delete</button>
+        ${m.category==='shortage'||m.category==='restock' ? `<button class="btn btn-primary btn-sm" onclick="addShortageToList(${m.id})">🛒 Add to Grocery List</button>` : ''}
+        ${m.category==='expiry' ? `<button class="btn btn-warn btn-sm" onclick="navigate('pantry')">📦 View Pantry</button>` : ''}
+      </div>
+    </div>
+    <div class="msg-detail-body">${bodyHtml}</div>
+    <div class="reply-box">
+      <input class="form-input" id="reply-input-${m.id}" placeholder="Write a reply…" style="flex:1" onkeydown="if(event.key==='Enter') replyToMessage(${m.id})" />
+      <button class="btn btn-primary btn-sm" onclick="replyToMessage(${m.id})">Send ↑</button>
+    </div>
+  `;
+}
+
+function replyToMessage(id) {
+  const input = document.getElementById(`reply-input-${id}`);
+  const text = input.value.trim();
+  if (!text) return;
+  const original = state.messages.find(m => m.id === id);
+  const session = getSession();
+  const senderName = session ? session.name : 'You';
+  const newId = Math.max(...state.messages.map(m=>m.id), 0) + 1;
+  state.messages.unshift({
+    id: newId,
+    from: senderName,
+    to: original ? original.from : 'All',
+    category: 'general',
+    priority: 'normal',
+    subject: `Re: ${original ? original.subject : 'Message'}`,
+    body: text,
+    time: 'Just now',
+    read: true,
+    autoGenerated: false
+  });
+  input.value = '';
+  renderInboxList();
+  updateMessageBadge();
+  showToast('Reply sent!', 'success');
+}
+
+function deleteMessage(id) {
+  state.messages = state.messages.filter(m => m.id !== id);
+  state.selectedMsgId = null;
+  document.getElementById('msg-detail-panel').innerHTML = `
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--text2);flex-direction:column;gap:10px;padding:40px">
+      <div style="font-size:40px">💬</div>
+      <div style="font-weight:600">Message deleted</div>
+      <div style="font-size:13px">Select another message to read</div>
+    </div>`;
+  renderInboxList();
+  updateMessageBadge();
+  showToast('Message deleted.', 'success');
+}
+
+function addShortageToList(msgId) {
+  // Auto-detect shortage items from low-stock inventory
+  const lowItems = state.inventory.filter(i => i.status === 'low');
+  lowItems.forEach(item => {
+    const exists = state.groceryList.find(g => g.name.toLowerCase().includes(item.name.toLowerCase().split(' ')[0]));
+    if (!exists) {
+      const newId = Math.max(...state.groceryList.map(i=>i.id), 0) + 1;
+      state.groceryList.push({ id: newId, name: item.name, qty: 2, unit: item.unit, aisle: item.category, source:'lowstock', checked: false, priority:'High' });
+    }
+  });
+  updateGroceryBadge();
+  showToast(`${lowItems.length} shortage items added to Grocery List!`, 'success');
+}
+
+function sendMessage() {
+  const subject = document.getElementById('msg-subject').value.trim();
+  const body    = document.getElementById('msg-body').value.trim();
+  if (!subject) { showToast('Please enter a subject.', 'error'); return; }
+  if (!body)    { showToast('Please write a message.', 'error'); return; }
+  const session  = getSession();
+  const category = document.getElementById('msg-category').value;
+  const priority = document.getElementById('msg-priority').value;
+  const to       = document.getElementById('msg-to').value;
+  const toLabel  = to === 'all' ? 'All Members' : 'Owner';
+  const newId    = Math.max(...state.messages.map(m=>m.id), 0) + 1;
+  state.messages.unshift({
+    id: newId,
+    from: session ? session.name : 'You',
+    to: toLabel,
+    category, priority,
+    subject, body,
+    time: 'Just now',
+    read: false,
+    autoGenerated: false
+  });
+  closeModal('compose-modal');
+  document.getElementById('msg-subject').value = '';
+  document.getElementById('msg-body').value = '';
+  renderInboxList();
+  updateMessageBadge();
+  renderNotifPanel();
+  showToast('Message sent!', 'success');
+}
+
+function markAllRead() {
+  state.messages.forEach(m => m.read = true);
+  renderInboxList();
+  updateMessageBadge();
+  renderNotifPanel();
+  showToast('All messages marked as read.', 'success');
+}
+
+function updateMessageBadge() {
+  const unread = state.messages.filter(m => !m.read).length;
+  const b = document.getElementById('badge-messages');
+  if (b) { b.textContent = unread; b.style.display = unread ? '' : 'none'; }
+  const bellLabel = document.getElementById('bell-count-label');
+  if (bellLabel) bellLabel.textContent = unread;
+  const dot = document.getElementById('bell-dot');
+  if (dot) dot.style.display = unread ? '' : 'none';
+}
+
+// ── Auto-generate shortage messages from inventory ───────
+function autoGenerateShortageMessages() {
+  const lowItems = state.inventory.filter(i => i.status === 'low');
+  const expiringItems = state.inventory.filter(i => i.status === 'expiring');
+  if (lowItems.length > 0) {
+    const alreadyExists = state.messages.find(m => m.autoGenerated && m.category==='shortage' && m.time==='Just now');
+    if (!alreadyExists) {
+      const itemList = lowItems.map(i => `• ${i.name} — Only ${i.qty} ${i.unit} remaining`).join('\n');
+      const newId = Math.max(...state.messages.map(m=>m.id), 0) + 1;
+      state.messages.unshift({
+        id: newId, from:'🤖 GrocerIQ Bot', to:'Owner',
+        category:'shortage', priority:'high',
+        subject:`⚠️ New Shortage Alert: ${lowItems.map(i=>i.name.split(' ')[0]).join(', ')}`,
+        body:`Dear Owner,\n\nAutomated shortage alert:\n\n${itemList}\n\nThese items have been flagged for restocking. Please update your Grocery List.\n\n— GrocerIQ Pantry Monitor`,
+        time:'Just now', read:false, autoGenerated:true
+      });
+    }
+  }
+  updateMessageBadge();
+  renderNotifPanel();
+}
+
+// ── Notification Bell Panel ───────────────────────────────
+function toggleNotifPanel() {
+  const p = document.getElementById('notif-panel');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+  if (p.style.display === 'block') renderNotifPanel();
+}
+
+function renderNotifPanel() {
+  const container = document.getElementById('notif-list');
+  if (!container) return;
+  const recent = state.messages.slice(0, 6);
+  if (recent.length === 0) { container.innerHTML = `<div style="padding:20px;text-align:center;color:var(--text2);font-size:13px">No notifications</div>`; return; }
+  const catIcons = { shortage:'⚠️', expiry:'🗓️', restock:'📦', general:'💬', urgent:'🚨', system:'🤖' };
+  container.innerHTML = recent.map(m =>
+    `<div class="notif-item ${m.read?'read':''}" onclick="navigate('messages');openMessage(${m.id});toggleNotifPanel()">
+      <span class="notif-item-icon">${catIcons[m.category]||'💬'}</span>
+      <div class="notif-item-text" style="flex:1;overflow:hidden">
+        <strong style="${!m.read?'font-weight:700':'font-weight:500'}">${m.subject.slice(0,42)}${m.subject.length>42?'…':''}</strong>
+        <span>${m.from} · ${m.time.split(',')[0]}</span>
+      </div>
+      ${!m.read ? `<div style="width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:5px"></div>` : ''}
+    </div>`
+  ).join('');
+}
+
+// Close notif panel on outside click
+document.addEventListener('click', e => {
+  const bell = document.getElementById('notif-bell');
+  if (bell && !bell.contains(e.target)) {
+    const p = document.getElementById('notif-panel');
+    if (p) p.style.display = 'none';
+  }
+});
+
+// ══════════════════════════════════════════════════════════
+//  EMAILJS — REAL EMAIL NOTIFICATIONS
+// ══════════════════════════════════════════════════════════
+
+const EJS_CONFIG_KEY = 'groceriq_emailjs_config';
+const EJS_ALERTS_KEY = 'groceriq_email_alerts_enabled';
+
+function getEJSConfig() {
+  try { return JSON.parse(localStorage.getItem(EJS_CONFIG_KEY)) || null; } catch { return null; }
+}
+function saveEJSConfig(cfg) { localStorage.setItem(EJS_CONFIG_KEY, JSON.stringify(cfg)); }
+function isEmailAlertsEnabled() { return localStorage.getItem(EJS_ALERTS_KEY) === 'true'; }
+function setEmailAlertsEnabled(val) { localStorage.setItem(EJS_ALERTS_KEY, val ? 'true' : 'false'); }
+
+// Load saved config into modal fields
+function loadEJSConfigToForm() {
+  const cfg = getEJSConfig();
+  if (!cfg) return;
+  document.getElementById('ejs-public-key').value  = cfg.publicKey  || '';
+  document.getElementById('ejs-service-id').value  = cfg.serviceId  || '';
+  document.getElementById('ejs-template-id').value = cfg.templateId || '';
+}
+
+function saveEmailJSConfig() {
+  const publicKey  = document.getElementById('ejs-public-key').value.trim();
+  const serviceId  = document.getElementById('ejs-service-id').value.trim();
+  const templateId = document.getElementById('ejs-template-id').value.trim();
+  if (!publicKey || !serviceId || !templateId) {
+    showEJSStatus('error', '❌ Please fill in all three fields.');
+    return;
+  }
+  saveEJSConfig({ publicKey, serviceId, templateId });
+  setEmailAlertsEnabled(true);
+  emailjs.init({ publicKey });
+  closeModal('emailjs-setup-modal');
+  updateEmailStatusCard();
+  showToast('✅ Email alerts configured! Shortage alerts will be sent to your email.', 'success');
+}
+
+function showEJSStatus(type, msg) {
+  const el = document.getElementById('ejs-status');
+  el.style.display = 'block';
+  el.style.background = type === 'error' ? 'var(--danger-light)' : type === 'success' ? 'var(--accent-light)' : 'var(--info-light)';
+  el.style.color = type === 'error' ? 'var(--danger)' : type === 'success' ? 'var(--accent)' : 'var(--info)';
+  el.style.border = `1px solid ${type === 'error' ? '#f5c6cb' : type === 'success' ? '#95d5b2' : '#bee5fb'}`;
+  el.textContent = msg;
+}
+
+// Test email send
+async function testEmailJS() {
+  const publicKey  = document.getElementById('ejs-public-key').value.trim();
+  const serviceId  = document.getElementById('ejs-service-id').value.trim();
+  const templateId = document.getElementById('ejs-template-id').value.trim();
+  if (!publicKey || !serviceId || !templateId) {
+    showEJSStatus('error', '❌ Please fill in all fields first.'); return;
+  }
+  const session = getSession();
+  if (!session) { showEJSStatus('error', '❌ Please log in first.'); return; }
+  const btn = document.getElementById('ejs-test-btn');
+  btn.textContent = '⏳ Sending…'; btn.disabled = true;
+  showEJSStatus('info', '⏳ Sending test email…');
+  try {
+    emailjs.init({ publicKey });
+    await emailjs.send(serviceId, templateId, {
+      owner_name:     session.name,
+      reply_to:       session.email,
+      household_name: session.household || 'My Household',
+      shortage_list:  '🧪 TEST MESSAGE — This is a test alert from GrocerIQ.\n\nIf you received this, your email integration is working correctly!',
+      detected_at:    new Date().toLocaleString('en-IN'),
+    });
+    showEJSStatus('success', '✅ Test email sent successfully! Check your inbox.');
+    showToast('Test email sent! Check your inbox.', 'success');
+  } catch (err) {
+    showEJSStatus('error', `❌ Failed: ${err.text || err.message || 'Check your credentials and try again.'}`);
+    showToast('Email send failed. Check credentials.', 'error');
+  } finally {
+    btn.textContent = '🧪 Send Test Email'; btn.disabled = false;
+  }
+}
+
+// The main function — called whenever shortage is detected
+async function sendShortageEmail(lowItems, expiringItems) {
+  if (!isEmailAlertsEnabled()) return;
+  const cfg = getEJSConfig();
+  if (!cfg) return;
+  const session = getSession();
+  if (!session) return;
+
+  // Only send to the OWNER
+  const owner = state.members.find(m => m.role === 'OWNER') || { name: session.name, email: session.email };
+
+  const shortageLines = lowItems.map(i =>
+    `• ${i.name} — Only ${i.qty} ${i.unit} remaining (Status: LOW STOCK)`
+  ).join('\n');
+
+  const expiryLines = expiringItems.map(i => {
+    const dl = i.expiryAt ? Math.ceil((new Date(i.expiryAt) - Date.now()) / 86400000) : null;
+    return `• ${i.name} — Expires in ${dl !== null ? dl + ' day(s)' : 'unknown'} (${i.expiryAt || 'N/A'})`;
+  }).join('\n');
+
+  let fullList = '';
+  if (shortageLines) fullList += `🔴 LOW STOCK ITEMS:\n${shortageLines}`;
+  if (expiryLines)   fullList += `\n\n🟠 EXPIRING SOON:\n${expiryLines}`;
+  if (!fullList)     fullList = 'All items are sufficiently stocked.';
+
+  try {
+    emailjs.init({ publicKey: cfg.publicKey });
+    await emailjs.send(cfg.serviceId, cfg.templateId, {
+      owner_name:     session.name,
+      reply_to:       session.email,
+      household_name: session.household || 'My Household',
+      shortage_list:  fullList,
+      detected_at:    new Date().toLocaleString('en-IN'),
+    });
+    showToast(`📧 Shortage alert emailed to ${session.email}!`, 'success');
+    // Log it as a message too
+    const newId = Math.max(...state.messages.map(m=>m.id), 0) + 1;
+    state.messages.unshift({
+      id: newId, from:'🤖 GrocerIQ Bot', to:'Owner',
+      category:'shortage', priority:'high',
+      subject:`📧 Email Alert Sent — ${lowItems.length} shortage(s) detected`,
+      body:`An email shortage alert was successfully sent to ${session.email} at ${new Date().toLocaleString('en-IN')}.\n\n${fullList}`,
+      time:'Just now', read:false, autoGenerated:true
+    });
+    updateMessageBadge();
+    renderNotifPanel();
+  } catch (err) {
+    showToast('Email send failed. Check EmailJS config.', 'error');
+    console.error('EmailJS error:', err);
+  }
+}
+
+// Manual "Send Alert Now" button
+async function sendShortageEmailNow() {
+  const lowItems      = state.inventory.filter(i => i.status === 'low');
+  const expiringItems = state.inventory.filter(i => i.status === 'expiring');
+  if (!lowItems.length && !expiringItems.length) {
+    showToast('No shortages or expiries detected right now!', 'warn'); return;
+  }
+  const btn = document.getElementById('email-send-now-btn');
+  btn.textContent = '⏳ Sending…'; btn.disabled = true;
+  await sendShortageEmail(lowItems, expiringItems);
+  btn.textContent = '📨 Send Alert Now'; btn.disabled = false;
+}
+
+// Toggle email alerts on/off
+function toggleEmailAlerts() {
+  const enabled = !isEmailAlertsEnabled();
+  setEmailAlertsEnabled(enabled);
+  updateEmailStatusCard();
+  showToast(enabled ? '🔔 Email alerts enabled!' : '🔕 Email alerts paused.', enabled ? 'success' : 'warn');
+}
+
+// Update the dashboard email status card
+function updateEmailStatusCard() {
+  const cfg     = getEJSConfig();
+  const enabled = isEmailAlertsEnabled();
+  const session = getSession();
+  const title   = document.getElementById('email-card-title');
+  const sub     = document.getElementById('email-card-sub');
+  const toggleWrap = document.getElementById('email-toggle-wrap');
+  const toggle     = document.getElementById('email-toggle');
+  const toggleThumb = document.getElementById('email-toggle-thumb');
+  const sendBtn    = document.getElementById('email-send-now-btn');
+  const setupBtn   = document.getElementById('email-setup-btn');
+
+  if (!cfg) {
+    title.textContent = 'Email Alerts: Not Configured';
+    sub.textContent   = 'Set up EmailJS to receive shortage alerts at your registered email';
+    toggleWrap.style.display = 'none';
+    sendBtn.style.display    = 'none';
+    setupBtn.textContent     = '⚙️ Setup';
+    document.getElementById('email-status-card').style.borderLeft = '3px solid var(--border)';
+  } else if (enabled) {
+    title.textContent = `Email Alerts: Active ✅`;
+    sub.textContent   = `Shortage alerts will be sent to ${session ? session.email : 'owner email'} automatically`;
+    toggleWrap.style.display  = 'flex';
+    toggle.style.background   = 'var(--accent)';
+    toggleThumb.style.left    = '21px';
+    sendBtn.style.display     = 'inline-flex';
+    setupBtn.textContent      = '⚙️ Edit';
+    document.getElementById('email-status-card').style.borderLeft = '3px solid var(--accent)';
+  } else {
+    title.textContent = 'Email Alerts: Paused 🔕';
+    sub.textContent   = 'Click the toggle to re-enable email notifications';
+    toggleWrap.style.display  = 'flex';
+    toggle.style.background   = 'var(--surface2)';
+    toggleThumb.style.left    = '3px';
+    sendBtn.style.display     = 'none';
+    setupBtn.textContent      = '⚙️ Edit';
+    document.getElementById('email-status-card').style.borderLeft = '3px solid var(--warn)';
+  }
+}
+
+// Hook into consumeItem — auto-send email if item goes low
+const _origConsumeItem = consumeItem;
+// (patched below after consumeItem definition via wrapper)
+
+async function consumeItemWithEmailCheck(id) {
+  const item = state.inventory.find(i => i.id === id);
+  if (item) {
+    item.qty = Math.max(0, parseFloat((item.qty - 0.5).toFixed(1)));
+    const wentLow = item.qty <= 0.3 && item.status !== 'low';
+    if (item.qty <= 0.3) item.status = 'low';
+    renderPantry();
+    showToast(`Marked ${item.name} as used`, 'success');
+    if (wentLow) {
+      showToast(`⚠️ ${item.name} is now LOW STOCK!`, 'warn');
+      autoGenerateShortageMessages();
+      // Auto-send email alert
+      const lowItems      = state.inventory.filter(i => i.status === 'low');
+      const expiringItems = state.inventory.filter(i => i.status === 'expiring');
+      await sendShortageEmail(lowItems, expiringItems);
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  AUTH SYSTEM  (localStorage-based)
+// ══════════════════════════════════════════════════════════
+
+const AUTH_KEY  = 'groceriq_users';
+const SESS_KEY  = 'groceriq_session';
+
+// Seed a demo account on first load
+function seedDemo() {
+  const users = getUsers();
+  if (!users.find(u => u.email === 'demo@groceriq.app')) {
+    users.push({ name:'Ayan Sharma', email:'demo@groceriq.app', password:'Demo@1234', household:'Sharma Family Home', color:'#2d6a4f' });
+    saveUsers(users);
+  }
+}
+
+function getUsers()    { try { return JSON.parse(localStorage.getItem(AUTH_KEY)) || []; } catch { return []; } }
+function saveUsers(u)  { localStorage.setItem(AUTH_KEY, JSON.stringify(u)); }
+function getSession()  { try { return JSON.parse(localStorage.getItem(SESS_KEY)); } catch { return null; } }
+function saveSession(u){ localStorage.setItem(SESS_KEY, JSON.stringify(u)); }
+function clearSession(){ localStorage.removeItem(SESS_KEY); }
+
+// ── Tab switcher ──────────────────────────────────────────
+function switchAuthTab(tab) {
+  document.getElementById('form-login').classList.toggle('active', tab === 'login');
+  document.getElementById('form-signup').classList.toggle('active', tab === 'signup');
+  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+  document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
+  document.getElementById('auth-header-title').textContent = tab === 'login' ? 'Welcome back' : 'Create your account';
+  clearAuthError();
+}
+
+// ── Show/hide password ────────────────────────────────────
+function togglePwd(id, btn) {
+  const inp = document.getElementById(id);
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+  else { inp.type = 'password'; btn.textContent = '👁'; }
+}
+
+// ── Password strength ─────────────────────────────────────
+function checkStrength(pwd) {
+  const wrap = document.getElementById('pwd-strength-wrap');
+  const fill = document.getElementById('pwd-strength-fill');
+  const label = document.getElementById('pwd-strength-label');
+  if (!pwd) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  let score = 0;
+  if (pwd.length >= 8)  score++;
+  if (/[A-Z]/.test(pwd)) score++;
+  if (/[0-9]/.test(pwd)) score++;
+  if (/[^A-Za-z0-9]/.test(pwd)) score++;
+  const levels = [
+    { w:'20%', color:'#c1121f', text:'Weak' },
+    { w:'45%', color:'#e07a1f', text:'Fair' },
+    { w:'70%', color:'#f4b942', text:'Good' },
+    { w:'100%', color:'#2d6a4f', text:'Strong 💪' },
+  ];
+  const l = levels[score - 1] || levels[0];
+  fill.style.width = l.w;
+  fill.style.background = l.color;
+  label.textContent = l.text;
+  label.style.color = l.color;
+}
+
+// ── Forgot password ───────────────────────────────────────
+function showForgot() {
+  document.getElementById('login-main').classList.add('hidden');
+  document.getElementById('forgot-panel').classList.add('show');
+  document.getElementById('auth-header-title').textContent = 'Reset Password';
+  clearAuthError();
+}
+function hideForgot() {
+  document.getElementById('login-main').classList.remove('hidden');
+  document.getElementById('forgot-panel').classList.remove('show');
+  document.getElementById('auth-header-title').textContent = 'Welcome back';
+  clearAuthError();
+}
+function handleForgot() {
+  const email = document.getElementById('forgot-email').value.trim();
+  if (!email || !email.includes('@')) { showAuthError('Please enter a valid email address.'); return; }
+  const users = getUsers();
+  if (!users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
+    showAuthError('No account found with this email.'); return;
+  }
+  hideForgot();
+  showAuthError(''); // clear
+  showToast('Password reset link sent! (demo — check console)', 'success');
+  console.log(`[GrocerIQ] Password reset requested for: ${email}`);
+}
+
+// ── Validation helpers ────────────────────────────────────
+function showAuthError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg;
+  el.classList.toggle('show', !!msg);
+}
+function clearAuthError() { showAuthError(''); }
+
+function isValidEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+
+// ── Login ─────────────────────────────────────────────────
+function handleLogin() {
+  clearAuthError();
+  const email    = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  if (!email)    { showAuthError('Please enter your email.'); return; }
+  if (!isValidEmail(email)) { showAuthError('Please enter a valid email address.'); return; }
+  if (!password) { showAuthError('Please enter your password.'); return; }
+  const users = getUsers();
+  const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+  if (!user)            { showAuthError('No account found with this email. Please sign up.'); return; }
+  if (user.password !== password) { showAuthError('Incorrect password. Please try again.'); return; }
+  loginSuccess(user);
+}
+
+// ── Sign Up ───────────────────────────────────────────────
+function handleSignup() {
+  clearAuthError();
+  const name      = document.getElementById('signup-name').value.trim();
+  const email     = document.getElementById('signup-email').value.trim();
+  const password  = document.getElementById('signup-password').value;
+  const confirm   = document.getElementById('signup-confirm').value;
+  const household = document.getElementById('signup-household').value.trim() || name + "'s Home";
+
+  if (!name)               { showAuthError('Please enter your full name.'); return; }
+  if (!email)              { showAuthError('Please enter your email.'); return; }
+  if (!isValidEmail(email)){ showAuthError('Please enter a valid email address.'); return; }
+  if (!password)           { showAuthError('Please create a password.'); return; }
+  if (password.length < 6) { showAuthError('Password must be at least 6 characters.'); return; }
+  if (password !== confirm) { showAuthError('Passwords do not match.'); return; }
+
+  const users = getUsers();
+  if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
+    showAuthError('An account with this email already exists. Please sign in.'); return;
+  }
+
+  const colors = ['#2d6a4f','#1d6fa4','#e07a1f','#9c27b0','#c1121f','#f4b942'];
+  const newUser = { name, email, password, household, color: colors[users.length % colors.length] };
+  users.push(newUser);
+  saveUsers(users);
+  loginSuccess(newUser);
+}
+
+// ── Demo Login ────────────────────────────────────────────
+function demoLogin() {
+  const users = getUsers();
+  const demo  = users.find(u => u.email === 'demo@groceriq.app');
+  loginSuccess(demo);
+}
+
+// ── Login success: save session → enter app ───────────────
+function loginSuccess(user) {
+  saveSession(user);
+  document.getElementById('auth-screen').classList.add('hidden');
+  updateSidebarUser(user);
+  // Update dashboard greeting
+  const greet = getGreeting();
+  const firstName = user.name.split(' ')[0];
+  const sub = document.querySelector('#page-dashboard .page-sub');
+  if (sub) sub.textContent = `${greet}, ${firstName} 👋 — Your pantry at a glance`;
+  showToast(`Welcome back, ${firstName}! 🎉`, 'success');
+}
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+// ── Logout ────────────────────────────────────────────────
+function handleLogout() {
+  if (!confirm('Are you sure you want to sign out?')) return;
+  clearSession();
+  // Reset auth form
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-password').value = '';
+  clearAuthError();
+  hideForgot();
+  switchAuthTab('login');
+  document.getElementById('auth-screen').classList.remove('hidden');
+  showToast('Signed out successfully.', 'success');
+}
+
+// ── Update sidebar with logged-in user ────────────────────
+function updateSidebarUser(user) {
+  document.getElementById('sidebar-username').textContent  = user.name;
+  document.getElementById('sidebar-useremail').textContent = user.email;
+  const initials = user.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+  const av = document.getElementById('sidebar-avatar');
+  av.textContent  = initials;
+  av.style.background = user.color || '#2d6a4f';
+  // Update household members owner name
+  if (state.members[0]) state.members[0].name = user.name;
+  if (state.members[0]) state.members[0].email = user.email;
+}
+
+// ── Auto-login if session exists ──────────────────────────
+function initAuth() {
+  seedDemo();
+  const session = getSession();
+  if (session) {
+    loginSuccess(session);
+  }
+  // Allow Enter key on login/signup inputs
+  ['login-email','login-password'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => { if (e.key==='Enter') handleLogin(); });
+  });
+  ['signup-name','signup-email','signup-password','signup-confirm','signup-household'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => { if (e.key==='Enter') handleSignup(); });
+  });
+  document.getElementById('forgot-email').addEventListener('keydown', e => { if (e.key==='Enter') handleForgot(); });
+}
+
+
+
+initAuth();
+initDashboard();
+renderGrocery();
+updateGroceryBadge();
+autoGenerateShortageMessages();
+renderNotifPanel();
+updateEmailStatusCard();
+
+// Set today's date as default for date inputs
+const today = new Date().toISOString().split('T')[0];
+document.querySelectorAll('input[type=date]').forEach(i => i.value = today);
+</script>
+</body>
+</html>
